@@ -96,6 +96,7 @@ func (app *App) initializeRoutes() {
 	app.router.HandleFunc("/login/callback", app.LoginCallbackHandler).Methods("GET")
 	app.router.HandleFunc("/login", app.LoginHandler).Methods("GET")
 	app.router.HandleFunc("/logout", app.LogoutHandler).Methods("GET")
+	app.router.HandleFunc("/api/cron/stats", app.ApiCronStatsHandler).Methods("GET")
 	app.router.HandleFunc("/", app.WelcomeHandler).Methods("GET")
 }
 

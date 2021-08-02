@@ -1,0 +1,23 @@
+{{ `{{/EditGroupHeader}}` }}
+{{- range $edit_group := .EditGroups }}
+{{ `{{/EditGroup` }}
+|name={{ $edit_group.Name }}
+|weight={{ $edit_group.Weight }}
+|notdone={{ $edit_group.Partial }}
+|partial={{ $edit_group.NotStarted }}
+|done={{ $edit_group.Done }}
+{{ `}}` }}
+{{- end }}
+{{ `{{/EditGroupFooter}}` }}
+
+{{ `{{/UserHeader}}` }}
+{{- range $user := .AllUsers }}
+{{ `{{/User` }}
+|nick={{ $user.Username }}
+|admin={{ $user.Admin }}
+|count={{ $user.EditCount }}
+|accuracy={{ $user.AccuracyPercentage }}
+|accuracyedits={{ $user.AccuracyCount }}
+{{ `}}` }}
+{{- end }}
+{{ `{{/UserFooter}}` }}

@@ -30,6 +30,11 @@ type User struct {
 	LegacyCount int
 }
 
+type UserAccuracy struct {
+	Percentage float32
+	EditCount  int
+}
+
 func (db *Db) CreateUser(username string, approved bool, admin bool) (bool, error) {
 	insert, err := db.db.Query("INSERT INTO users (username, admin, approved) VALUES (?, ?, ?)", username, admin, approved)
 	if err != nil {
@@ -128,4 +133,36 @@ func (db *Db) CalculateTotalUserClassifications(user *User) (int, error) {
 	}
 
 	return user.LegacyCount + total, nil
+}
+
+func (db *Db) CalculateUserClassificationAccuracy(user *User) (*UserAccuracy, error) {
+	userClassifications, err := db.LookupUserClassificationsByUserId(user.Id)
+	if err != nil {
+		return nil, err
+	}
+
+	total, correct := 0, 0
+	for _, userClassification := range userClassifications {
+		edit, err := db.LookupEditById(userClassification.EditId)
+		if err != nil {
+			return nil, err
+		}
+
+		classification, err := db.CalculateEditClassification(edit)
+		if err != nil {
+			return nil, err
+		}
+
+		if classification != EDIT_CLASSIFICATION_UNKNOWN && classification != EDIT_CLASSIFICATION_SKIPPED {
+			total += 1
+			if classification == userClassification.Classification {
+				correct += 1
+			}
+		}
+	}
+
+	return &UserAccuracy{
+		EditCount:  total,
+		Percentage: (float32(correct) / float32(total)) * 100.00,
+	}, nil
 }
