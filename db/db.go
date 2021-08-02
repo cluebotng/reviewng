@@ -1,4 +1,4 @@
-package controllers
+package db
 
 // MIT License
 //
@@ -23,52 +23,28 @@ package controllers
 // SOFTWARE.
 
 import (
-	"github.com/cluebotng/reviewng/db"
-	"html/template"
-	"net/http"
+	"database/sql"
+	"fmt"
+	"github.com/cluebotng/reviewng/cfg"
+	_ "github.com/go-sql-driver/mysql"
+	"time"
 )
 
-type userContributions struct {
-	Username string
-	Count    int
+type Db struct {
+	db *sql.DB
 }
 
-func calculateContributionStats(app *App) []userContributions {
-	allUsers, err := app.dbh.FetchAllUsers()
+func NewDb(cfg *cfg.Config) (*Db, error) {
+	url := fmt.Sprintf("%s:%s@tcp(%s)/%s", cfg.Db.User, cfg.Db.Pass, cfg.Db.Host, cfg.Db.Name)
+
+	database, err := sql.Open("mysql", url)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
+	database.SetConnMaxLifetime(time.Minute * 5)
+	database.SetMaxOpenConns(100)
+	database.SetMaxIdleConns(10)
 
-	contributions := []userContributions{}
-	for _, user := range allUsers {
-		userClassifications, err := app.dbh.CalculateTotalUserClassifications(user)
-		if err != nil {
-			panic(err)
-		}
-		if userClassifications > 0 {
-			contributions = append(contributions, userContributions{user.Username, userClassifications})
-		}
-	}
-	return contributions
-}
-
-func (app *App) WelcomeHandler(w http.ResponseWriter, r *http.Request) {
-	// Not logged in, send to the login page
-	user := app.getAuthenticatedUser(r)
-
-	t, err := template.ParseFS(app.fsTemplates, "templates/welcome.tmpl")
-	if err != nil {
-		panic(err)
-	}
-
-	contributionStats := calculateContributionStats(app)
-	if err := t.Execute(w, struct {
-		User              *db.User
-		ContributionStats []userContributions
-	}{
-		User:              user,
-		ContributionStats: contributionStats,
-	}); err != nil {
-		panic(err)
-	}
+	db := Db{db: database}
+	return &db, nil
 }
