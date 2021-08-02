@@ -1,4 +1,4 @@
-package cfg
+package wikipedia
 
 // MIT License
 //
@@ -23,39 +23,43 @@ package cfg
 // SOFTWARE.
 
 import (
-	"gopkg.in/yaml.v2"
+	"encoding/json"
+	"fmt"
 	"io/ioutil"
+	"net/http"
+	"net/url"
 )
 
-type Config struct {
-	Session struct {
-		SecretKey string
-	}
-	Db struct {
-		Host string
-		User string
-		Pass string
-		Name string
-	}
-	OAuth struct {
-		Token  string
-		Secret string
-	}
-	Wikipedia struct {
-		UpdateStats bool `yaml:"update_stats"`
-	}
-}
+func UpdatePage(contents string) error {
+	form := url.Values{}
+	form.Add("action", "edit")
+	form.Add("title", "User:ClueBot NG/ReviewInterface/Stats")
+	form.Add("summary", "Uploading Stats")
+	form.Add("token", "+\\")
+	form.Add("format", "json")
+	form.Add("text", contents)
 
-func LoadConfigFromDisk(configPath string) (*Config, error) {
-	data, err := ioutil.ReadFile(configPath)
-	if err != nil {
-		return nil, err
+	resp, _ := http.PostForm("https://en.wikipedia.org/w/api.php", form)
+	body, _ := ioutil.ReadAll(resp.Body)
+	if err := resp.Body.Close(); err != nil {
+		return err
 	}
 
-	config := Config{}
-	if err := yaml.Unmarshal([]byte(data), &config); err != nil {
-		return nil, err
+	data := struct {
+		Edit struct {
+			Result string
+			PageId int `json:"pageid"`
+			Title  string
+			OldId  int `json:"oldrevid"`
+			NewId  int `json:"newrevid"`
+		}
+	}{}
+	if err := json.Unmarshal(body, &data); err != nil {
+		return err
 	}
 
-	return &config, nil
+	if data.Edit.Result != "Success" {
+		return fmt.Errorf("API error: %s", data.Edit.Result)
+	}
+	return nil
 }

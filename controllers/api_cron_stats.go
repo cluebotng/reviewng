@@ -3,6 +3,7 @@ package controllers
 import (
 	"bytes"
 	"github.com/cluebotng/reviewng/db"
+	"github.com/cluebotng/reviewng/wikipedia"
 	"html/template"
 	"net/http"
 )
@@ -108,6 +109,12 @@ func (app *App) ApiCronStatsHandler(w http.ResponseWriter, r *http.Request) {
 		AllUsers:   calculateUserContributionStats(app),
 	}); err != nil {
 		panic(err)
+	}
+
+	if app.config.Wikipedia.UpdateStats {
+		if err := wikipedia.UpdatePage(tpl.String()); err != nil {
+			panic(err)
+		}
 	}
 
 	if _, err := w.Write(tpl.Bytes()); err != nil {
