@@ -1,4 +1,4 @@
-package cfg
+package db
 
 // MIT License
 //
@@ -22,40 +22,52 @@ package cfg
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import (
-	"gopkg.in/yaml.v2"
-	"io/ioutil"
-)
-
-type Config struct {
-	Session struct {
-		SecretKey string
-	}
-	Db struct {
-		Host string
-		User string
-		Pass string
-		Name string
-	}
-	OAuth struct {
-		Token  string
-		Secret string
-	}
-	Wikipedia struct {
-		UpdateStats bool `yaml:"update_stats"`
-	}
+type EditGroup struct {
+	Id     int
+	Name   string
+	Weight int
 }
 
-func LoadConfigFromDisk(configPath string) (*Config, error) {
-	data, err := ioutil.ReadFile(configPath)
+func (db *Db) LookupEditGroupById(id int) (*EditGroup, error) {
+	results, err := db.db.Query("SELECT id, name, weight FROM edit_group WHERE id = ?", id)
 	if err != nil {
 		return nil, err
 	}
 
-	config := Config{}
-	if err := yaml.Unmarshal([]byte(data), &config); err != nil {
+	if !results.Next() {
+		return nil, nil
+	}
+
+	group := &EditGroup{}
+	if err := results.Scan(&group.Id, &group.Name, &group.Weight); err != nil {
 		return nil, err
 	}
 
-	return &config, nil
+	if err := results.Close(); err != nil {
+		return nil, err
+	}
+
+	return group, nil
+}
+
+func (db *Db) FetchAllEditGroups() ([]*EditGroup, error) {
+	results, err := db.db.Query("SELECT id, name, weight FROM edit_group")
+	if err != nil {
+		return nil, err
+	}
+
+	editGroups := []*EditGroup{}
+	for results.Next() {
+		editGroup := &EditGroup{}
+		if err := results.Scan(&editGroup.Id, &editGroup.Name, &editGroup.Weight); err != nil {
+			return nil, err
+		}
+		editGroups = append(editGroups, editGroup)
+	}
+
+	if err := results.Close(); err != nil {
+		return nil, err
+	}
+
+	return editGroups, nil
 }

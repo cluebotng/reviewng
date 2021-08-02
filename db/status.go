@@ -1,4 +1,4 @@
-package cfg
+package db
 
 // MIT License
 //
@@ -22,40 +22,11 @@ package cfg
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import (
-	"gopkg.in/yaml.v2"
-	"io/ioutil"
-)
+const EDIT_STATUS_NOT_DONE = 0
+const EDIT_STATUS_PARTIAL = 1
+const EDIT_STATUS_DONE = 2
 
-type Config struct {
-	Session struct {
-		SecretKey string
-	}
-	Db struct {
-		Host string
-		User string
-		Pass string
-		Name string
-	}
-	OAuth struct {
-		Token  string
-		Secret string
-	}
-	Wikipedia struct {
-		UpdateStats bool `yaml:"update_stats"`
-	}
-}
-
-func LoadConfigFromDisk(configPath string) (*Config, error) {
-	data, err := ioutil.ReadFile(configPath)
-	if err != nil {
-		return nil, err
-	}
-
-	config := Config{}
-	if err := yaml.Unmarshal([]byte(data), &config); err != nil {
-		return nil, err
-	}
-
-	return &config, nil
-}
+const EDIT_CLASSIFICATION_VANDALISM = 0
+const EDIT_CLASSIFICATION_CONSTRUCTIVE = 1
+const EDIT_CLASSIFICATION_SKIPPED = 2
+const EDIT_CLASSIFICATION_UNKNOWN = 3

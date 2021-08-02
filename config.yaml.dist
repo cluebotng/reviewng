@@ -8,3 +8,5 @@ db:
   user: root
   pass:
   name: cbng_review
+wikipedia:
+  update_stats: false
