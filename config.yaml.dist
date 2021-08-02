@@ -1,2 +1,10 @@
 session:
   key: very secret key
+oauth:
+  token: client token
+  secret: client secret
+db:
+  host: 127.0.0.1
+  user: root
+  pass:
+  name: cbng_review

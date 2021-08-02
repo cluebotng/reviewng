@@ -31,6 +31,16 @@ type Config struct {
 	Session struct {
 		SecretKey string
 	}
+	Db struct {
+		Host string
+		User string
+		Pass string
+		Name string
+	}
+	OAuth struct {
+		Token  string
+		Secret string
+	}
 }
 
 func LoadConfigFromDisk(configPath string) (*Config, error) {

@@ -25,6 +25,8 @@ package controllers
 import (
 	"embed"
 	"github.com/cluebotng/reviewng/cfg"
+	"github.com/cluebotng/reviewng/db"
+	"github.com/dghubble/oauth1"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"net/http"
@@ -53,15 +55,35 @@ type App struct {
 	config       *cfg.Config
 	router       *mux.Router
 	sessionStore *sessions.CookieStore
+	dbh          *db.Db
+	oauth        *oauth1.Config
 	fsTemplates  *embed.FS
 	fsStatic     *embed.FS
 }
 
 func NewApp(cfg *cfg.Config, fsTemplates, fsStatic *embed.FS) *App {
+	oauth := oauth1.Config{
+		ConsumerKey:    cfg.OAuth.Token,
+		ConsumerSecret: cfg.OAuth.Secret,
+		CallbackURL:    "oob",
+		Endpoint: oauth1.Endpoint{
+			RequestTokenURL: "https://en.wikipedia.org/w/index.php?title=Special:OAuth/initiate",
+			AuthorizeURL:    "https://en.wikipedia.org/w/index.php?title=Special:OAuth/authorize",
+			AccessTokenURL:  "https://en.wikipedia.org/w/index.php?title=Special:OAuth/token",
+		},
+	}
+
+	dbh, err := db.NewDb(cfg)
+	if err != nil {
+		panic(err)
+	}
+
 	session := sessions.NewCookieStore([]byte(cfg.Session.SecretKey))
 	app := App{
 		config:       cfg,
 		sessionStore: session,
+		dbh:          dbh,
+		oauth:        &oauth,
 		fsTemplates:  fsTemplates,
 		fsStatic:     fsStatic,
 	}
@@ -71,7 +93,37 @@ func NewApp(cfg *cfg.Config, fsTemplates, fsStatic *embed.FS) *App {
 func (app *App) initializeRoutes() {
 	app.router = mux.NewRouter()
 	app.router.PathPrefix("/static/").Handler(http.FileServer(NoIndexFileSystem{http.FS(app.fsStatic)})).Methods("GET")
+	app.router.HandleFunc("/login/callback", app.LoginCallbackHandler).Methods("GET")
+	app.router.HandleFunc("/login", app.LoginHandler).Methods("GET")
+	app.router.HandleFunc("/logout", app.LogoutHandler).Methods("GET")
 	app.router.HandleFunc("/", app.WelcomeHandler).Methods("GET")
+}
+
+func (app *App) getSessionStore(r *http.Request) *sessions.Session {
+	session, _ := app.sessionStore.Get(r, "cluebotng-review")
+	return session
+}
+
+func (app *App) getAuthenticatedUser(r *http.Request) *db.User {
+	session := app.getSessionStore(r)
+	if userId, ok := session.Values["user.id"]; ok {
+		if user, err := app.dbh.LookupUserById(userId.(int)); err == nil {
+			return user
+		}
+	}
+	return nil
+}
+
+func (app *App) setAuthenticatedUser(r *http.Request, w http.ResponseWriter, user *db.User) error {
+	session := app.getSessionStore(r)
+	session.Values["user.id"] = user.Id
+	return session.Save(r, w)
+}
+
+func (app *App) clearSessionData(r *http.Request, w http.ResponseWriter) error {
+	session := app.getSessionStore(r)
+	session.Values = map[interface{}]interface{}{}
+	return session.Save(r, w)
 }
 
 func (app *App) RunForever(addr string) {
