@@ -93,38 +93,38 @@ func NewApp(cfg *cfg.Config, fsTemplates, fsStatic *embed.FS) *App {
 func (app *App) initializeRoutes() {
 	app.router = mux.NewRouter()
 	app.router.PathPrefix("/static/").Handler(http.FileServer(NoIndexFileSystem{http.FS(app.fsStatic)})).Methods("GET")
+
 	app.router.HandleFunc("/login/callback", app.LoginCallbackHandler).Methods("GET")
 	app.router.HandleFunc("/login", app.LoginHandler).Methods("GET")
 	app.router.HandleFunc("/logout", app.LogoutHandler).Methods("GET")
+
+	app.router.HandleFunc("/api/user", app.ApiUserListHandler).Methods("GET")
+	app.router.HandleFunc("/api/user", app.ApiUserCreateHandler).Methods("POST")
+	app.router.HandleFunc("/api/user/{id}", app.ApiUserGetHandler).Methods("GET")
+	app.router.HandleFunc("/api/user/{id}", app.ApiUserUpdateHandler).Methods("UPDATE")
+
+	app.router.HandleFunc("/api/edit-group", app.ApiEditGroupListHandler).Methods("GET")
+	app.router.HandleFunc("/api/edit-group", app.ApiEditGroupCreateHandler).Methods("POST")
+	app.router.HandleFunc("/api/edit-group/{id}", app.ApiEditGroupGetHandler).Methods("GET")
+	app.router.HandleFunc("/api/edit-group/{id}", app.ApiEditGroupUpdateHandler).Methods("UPDATE")
+
+	app.router.HandleFunc("/api/edit", app.ApiEditListHandler).Methods("GET")
+	app.router.HandleFunc("/api/edit", app.ApiEditCreateHandler).Methods("POST")
+	app.router.HandleFunc("/api/edit/next", app.ApiEditNextHandler).Methods("GET")
+	app.router.HandleFunc("/api/edit/{id}", app.ApiEditGetHandler).Methods("GET")
+	app.router.HandleFunc("/api/edit/{id}", app.ApiEditUpdateHandler).Methods("UPDATE")
+
+	app.router.HandleFunc("/api/user-classification", app.ApiUserClassificationListHandler).Methods("GET")
+	app.router.HandleFunc("/api/user-classification", app.ApiUserClassificationCreateHandler).Methods("POST")
+	app.router.HandleFunc("/api/user-classification/{id}", app.ApiUserClassificationGetHandler).Methods("GET")
+
 	app.router.HandleFunc("/api/cron/stats", app.ApiCronStatsHandler).Methods("GET")
+	app.router.HandleFunc("/api/report/import", app.ApiCronReportImportHandler).Methods("GET")
+	app.router.HandleFunc("/api/report/export", app.ApiCronReportExportHandler).Methods("GET")
+
 	app.router.HandleFunc("/", app.WelcomeHandler).Methods("GET")
-}
-
-func (app *App) getSessionStore(r *http.Request) *sessions.Session {
-	session, _ := app.sessionStore.Get(r, "cluebotng-review")
-	return session
-}
-
-func (app *App) getAuthenticatedUser(r *http.Request) *db.User {
-	session := app.getSessionStore(r)
-	if userId, ok := session.Values["user.id"]; ok {
-		if user, err := app.dbh.LookupUserById(userId.(int)); err == nil {
-			return user
-		}
-	}
-	return nil
-}
-
-func (app *App) setAuthenticatedUser(r *http.Request, w http.ResponseWriter, user *db.User) error {
-	session := app.getSessionStore(r)
-	session.Values["user.id"] = user.Id
-	return session.Save(r, w)
-}
-
-func (app *App) clearSessionData(r *http.Request, w http.ResponseWriter) error {
-	session := app.getSessionStore(r)
-	session.Values = map[interface{}]interface{}{}
-	return session.Save(r, w)
+	app.router.HandleFunc("/review", app.ReviewHandler).Methods("GET")
+	app.router.HandleFunc("/admin", app.AdminHandler).Methods("GET")
 }
 
 func (app *App) RunForever(addr string) {

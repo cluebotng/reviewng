@@ -30,6 +30,18 @@ type UserClassification struct {
 	EditId         int
 }
 
+func (db *Db) CreateUserClassification(newUserClassification UserClassification) error {
+	insert, err := db.db.Query("INSERT INTO user_classification (user_id, edit_id, comment, classification) VALUES (?, ?, ?, ?)", newUserClassification.UserId, newUserClassification.EditId, newUserClassification.Comment, newUserClassification.Classification)
+	if err != nil {
+		return err
+	}
+
+	if err := insert.Close(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (db *Db) LookupUserClassificationsById(id int) (*UserClassification, error) {
 	results, err := db.db.Query("SELECT id, user_id, comment, classification, edit_id FROM user_classification WHERE id = ?", id)
 	if err != nil {
@@ -76,6 +88,28 @@ func (db *Db) LookupUserClassificationsByEditId(id int) ([]*UserClassification, 
 
 func (db *Db) LookupUserClassificationsByUserId(id int) ([]*UserClassification, error) {
 	results, err := db.db.Query("SELECT id, user_id, comment, classification, edit_id FROM user_classification WHERE user_id = ?", id)
+	if err != nil {
+		return nil, err
+	}
+
+	classifications := []*UserClassification{}
+	for results.Next() {
+		c := &UserClassification{}
+		if err := results.Scan(&c.Id, &c.UserId, &c.Comment, &c.Classification, &c.EditId); err != nil {
+			return nil, err
+		}
+		classifications = append(classifications, c)
+	}
+
+	if err := results.Close(); err != nil {
+		return nil, err
+	}
+
+	return classifications, nil
+}
+
+func (db *Db) FetchAllUserClassifications() ([]*UserClassification, error) {
+	results, err := db.db.Query("SELECT id, user_id, comment, classification, edit_id FROM user_classification")
 	if err != nil {
 		return nil, err
 	}

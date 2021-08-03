@@ -101,7 +101,11 @@ func (app *App) LoginCallbackHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Need to create a user
 	if user == nil {
-		if _, err := app.dbh.CreateUser(identity["username"].(string), false, false); err != nil {
+		if err := app.dbh.CreateUser(db.User{
+			Username: identity["username"].(string),
+			Admin:    false,
+			Approved: false,
+		}); err != nil {
 			panic(err)
 		}
 
