@@ -54,3 +54,16 @@ func (app *App) clearSessionData(r *http.Request, w http.ResponseWriter) error {
 	session.Values = map[interface{}]interface{}{}
 	return session.Save(r, w)
 }
+
+func ConvertClassificationToString(classification int) string {
+	if classification == db.EDIT_CLASSIFICATION_VANDALISM {
+		return "V"
+	}
+	if classification == db.EDIT_CLASSIFICATION_CONSTRUCTIVE {
+		return "C"
+	}
+	if classification == db.EDIT_CLASSIFICATION_SKIPPED {
+		return "S"
+	}
+	return "U"
+}
