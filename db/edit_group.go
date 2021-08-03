@@ -1,5 +1,9 @@
 package db
 
+import (
+	"sort"
+)
+
 // MIT License
 //
 // Copyright (c) 2021 Damian Zaremba
@@ -50,6 +54,28 @@ func (db *Db) LookupEditGroupById(id int) (*EditGroup, error) {
 	return group, nil
 }
 
+func (db *Db) LookupEditGroupByName(name string) (*EditGroup, error) {
+	results, err := db.db.Query("SELECT id, name, weight FROM edit_group WHERE name = ?", name)
+	if err != nil {
+		return nil, err
+	}
+
+	if !results.Next() {
+		return nil, nil
+	}
+
+	group := &EditGroup{}
+	if err := results.Scan(&group.Id, &group.Name, &group.Weight); err != nil {
+		return nil, err
+	}
+
+	if err := results.Close(); err != nil {
+		return nil, err
+	}
+
+	return group, nil
+}
+
 func (db *Db) FetchAllEditGroups() ([]*EditGroup, error) {
 	results, err := db.db.Query("SELECT id, name, weight FROM edit_group")
 	if err != nil {
@@ -70,4 +96,52 @@ func (db *Db) FetchAllEditGroups() ([]*EditGroup, error) {
 	}
 
 	return editGroups, nil
+}
+
+func (db *Db) CalculateRandomPendingEditForUser(user *User) (*Edit, error) {
+	allGroups, err := db.FetchAllEditGroups()
+	if err != nil {
+		return nil, err
+	}
+
+	// Sort groups by weight
+	sort.Slice(allGroups[:], func(i, j int) bool {
+		return allGroups[i].Weight < allGroups[j].Weight
+	})
+
+	// Get all user edit ids
+	userClassifications, err := db.LookupUserClassificationsByUserId(user.Id)
+	if err != nil {
+		return nil, err
+	}
+	knownUserEdits := map[int]bool{}
+	for _, userClassification := range userClassifications {
+		knownUserEdits[userClassification.EditId] = true
+	}
+
+	for _, group := range allGroups {
+		// Calculate if we have some edits in this selected group
+		groupEdits, err := db.LookupEditsByGroupId(group.Id)
+		if err != nil {
+			return nil, err
+		}
+		for _, edit := range groupEdits {
+			// First check if we don't already have a classification for this edit
+			if _, ok := knownUserEdits[edit.Id]; ok {
+				continue
+			}
+
+			// Next check if the edit is pending a classification
+			editClassification, err := db.CalculateEditClassification(edit)
+			if err != nil {
+				return nil, err
+			}
+
+			// Return the edit if it still needs classifying
+			if editClassification == EDIT_CLASSIFICATION_UNKNOWN {
+				return edit, nil
+			}
+		}
+	}
+	return nil, nil
 }

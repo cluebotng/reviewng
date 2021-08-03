@@ -23,11 +23,11 @@ package db
 // SOFTWARE.
 
 type User struct {
-	Id          int
-	Username    string
-	Approved    bool
-	Admin       bool
-	LegacyCount int
+	Id          int    `json:"user_id"`
+	Username    string `json:"username"`
+	Approved    bool   `json:"is_approved"`
+	Admin       bool   `json:"is_admin"`
+	LegacyCount int    `json:"legacy_count"`
 }
 
 type UserAccuracy struct {
@@ -35,16 +35,28 @@ type UserAccuracy struct {
 	EditCount  int
 }
 
-func (db *Db) CreateUser(username string, approved bool, admin bool) (bool, error) {
-	insert, err := db.db.Query("INSERT INTO users (username, admin, approved) VALUES (?, ?, ?)", username, admin, approved)
+func (db *Db) CreateUser(newUser User) error {
+	insert, err := db.db.Query("INSERT INTO users (username, admin, approved) VALUES (?, ?, ?)", newUser.Username, newUser.Admin, newUser.Approved)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	if err := insert.Close(); err != nil {
-		return false, err
+		return err
 	}
-	return true, nil
+	return nil
+}
+
+func (db *Db) UpdateUser(id int, approved bool, admin bool) error {
+	update, err := db.db.Query("UPDATE users SET username=?, approved=?, admin=?)", approved, admin)
+	if err != nil {
+		return err
+	}
+
+	if err := update.Close(); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (db *Db) LookupUserByName(username string) (*User, error) {

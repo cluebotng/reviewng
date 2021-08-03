@@ -1,0 +1,30 @@
+<!doctype html>
+<html class="review">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title>ClueBot Review Interface</title>
+    <link type="text/css" rel="stylesheet" href="/static/css/interface.css">
+    <script type="text/javascript" src="/static/js/interface.js"></script>
+</head>
+<body class="review">
+<noscript>
+    <div style="width: 22em; position: absolute; left: 50%; margin-left: -11em; color: red; background-color: white; border: 1px solid red; padding: 4px; font-family: sans-serif">
+        Your web browser must have JavaScript enabled
+        in order for this application to display correctly.
+    </div>
+</noscript>
+<div id="iframediv">
+    <iframe src="about:blank" id="iframe" frameborder="0"></iframe>
+</div>
+<div id="top">
+    <span id="options">
+        Render:
+        <input type="radio" name="url_type" value="n" onchange="refreshRender()">Normal</input>
+        <input type="radio" name="url_type" value="d" onchange="refreshRender()" checked="checked">Diff only</input>
+        <input type="radio" name="url_type" value="r" onchange="refreshRender()">Render Only</input>
+    </span>
+    <span id="edit">Edit: <span id="editid"></span></span>
+    <span id="username">Username: {{ .User.Username }}</span>
+</div>
+</body>
+</html>
