@@ -23,6 +23,14 @@
         <input type="radio" name="url_type" value="d" onchange="refreshRender()" checked="checked">Diff only</input>
         <input type="radio" name="url_type" value="r" onchange="refreshRender()">Render Only</input>
     </span>
+
+    <span id="classify">
+        <button type="button" onclick="classifyEdit(0, false)">Vandalism</button>
+        <button type="button" onclick="classifyEdit(1, false)">Constructive</button>
+        <button type="button" onclick="classifyEdit(2, false)">Skip</button>
+        <input type="text" id="comment" />
+    </span>
+
     <span id="edit">Edit: <span id="editid"></span></span>
     <span id="username">Username: {{ .User.Username }}</span>
 </div>
