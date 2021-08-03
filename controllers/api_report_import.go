@@ -23,13 +23,14 @@ package controllers
 // SOFTWARE.
 
 import (
+	"github.com/cluebotng/reviewng/db"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
 )
 
-func (app *App) ApiCronReportImportHandler(w http.ResponseWriter, r *http.Request) {
+func (app *App) ApiReportImportHandler(w http.ResponseWriter, r *http.Request) {
 	resp, _ := http.Get("https://cluebotng.toolforge.org/api.php")
 	body, _ := ioutil.ReadAll(resp.Body)
 	if err := resp.Body.Close(); err != nil {
@@ -65,7 +66,7 @@ func (app *App) ApiCronReportImportHandler(w http.ResponseWriter, r *http.Reques
 		}
 
 		// Create a new entry
-		if err := app.dbh.CreateEdit(newEditId, eg, 2); err != nil {
+		if err := app.dbh.CreateEdit(newEditId, eg, 2, db.EDIT_CLASSIFICATION_CONSTRUCTIVE); err != nil {
 			panic(err)
 		}
 	}

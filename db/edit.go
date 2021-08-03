@@ -23,8 +23,9 @@ package db
 // SOFTWARE.
 
 type Edit struct {
-	Id       int
-	Required int
+	Id             int
+	Required       int
+	Classification int
 }
 
 func MaxInt(x, y int) int {
@@ -34,8 +35,8 @@ func MaxInt(x, y int) int {
 	return x
 }
 
-func (db *Db) CreateEdit(id int, eg *EditGroup, required int) error {
-	insert, err := db.db.Query("INSERT INTO edit (id, edit_group_id, required) VALUES (?, ?, ?)", id, eg.Id, required)
+func (db *Db) CreateEdit(id int, eg *EditGroup, required, classification int) error {
+	insert, err := db.db.Query("INSERT INTO edit (id, edit_group_id, required, classification) VALUES (?, ?, ?, ?)", id, eg.Id, required, classification)
 	if err != nil {
 		return err
 	}
@@ -47,7 +48,7 @@ func (db *Db) CreateEdit(id int, eg *EditGroup, required int) error {
 }
 
 func (db *Db) LookupEditById(id int) (*Edit, error) {
-	results, err := db.db.Query("SELECT id, required FROM edit WHERE id = ?", id)
+	results, err := db.db.Query("SELECT id, required, classification FROM edit WHERE id = ?", id)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +58,7 @@ func (db *Db) LookupEditById(id int) (*Edit, error) {
 	}
 
 	edit := &Edit{}
-	if err := results.Scan(&edit.Id, &edit.Required); err != nil {
+	if err := results.Scan(&edit.Id, &edit.Required, &edit.Classification); err != nil {
 		return nil, err
 	}
 
@@ -69,7 +70,7 @@ func (db *Db) LookupEditById(id int) (*Edit, error) {
 }
 
 func (db *Db) LookupEditsByGroupId(id int) ([]*Edit, error) {
-	results, err := db.db.Query("SELECT id, required FROM edit WHERE edit_group_id = ?", id)
+	results, err := db.db.Query("SELECT id, required, classification FROM edit WHERE edit_group_id = ?", id)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +78,7 @@ func (db *Db) LookupEditsByGroupId(id int) ([]*Edit, error) {
 	edits := []*Edit{}
 	for results.Next() {
 		edit := Edit{}
-		if err := results.Scan(&edit.Id, &edit.Required); err != nil {
+		if err := results.Scan(&edit.Id, &edit.Required, &edit.Classification); err != nil {
 			return nil, err
 		}
 		edits = append(edits, &edit)
@@ -91,7 +92,7 @@ func (db *Db) LookupEditsByGroupId(id int) ([]*Edit, error) {
 }
 
 func (db *Db) FetchAllEdits() ([]*Edit, error) {
-	results, err := db.db.Query("SELECT id, required FROM edit")
+	results, err := db.db.Query("SELECT id, required, classification FROM edit")
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +100,7 @@ func (db *Db) FetchAllEdits() ([]*Edit, error) {
 	edits := []*Edit{}
 	for results.Next() {
 		edit := &Edit{}
-		if err := results.Scan(&edit.Id, &edit.Required); err != nil {
+		if err := results.Scan(&edit.Id, &edit.Required, &edit.Classification); err != nil {
 			return nil, err
 		}
 		edits = append(edits, edit)

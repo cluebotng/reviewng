@@ -28,7 +28,7 @@ import (
 	"net/http"
 )
 
-func (app *App) ApiCronReportExportHandler(w http.ResponseWriter, r *http.Request) {
+func (app *App) ApiReportExportHandler(w http.ResponseWriter, r *http.Request) {
 	// Create a map of known ids
 	editClassifications := map[int]int{}
 	allEdits, err := app.dbh.FetchAllEdits()
