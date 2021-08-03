@@ -4,6 +4,43 @@ function refreshRender() {
     renderEdit(editId);
 }
 
+function classifyEdit(classification, confirmation) {
+    let editId = document.getElementById("editid").innerText;
+    console.log("Classifying " + editId + " as " + classification + " (" + confirmation + ")");
+
+    let req = new XMLHttpRequest();
+    req.onreadystatechange = function(){
+        if (this.readyState !== 4) {
+            return;
+        }
+
+        if (this.status !== 200) {
+            alert('Failed to classify edit');
+            return;
+        }
+
+        // API wants to confirm - ask the user
+        let require_confirmation = JSON.parse(this.responseText)["require_confirmation"];
+        if (require_confirmation) {
+            let confirmation = confirm("Are you sure?");
+            if (!confirmation) {
+                return;
+            }
+            return classifyEdit(classification, true);
+        }
+
+        // We are done - onto the next
+        loadNextEditId();
+    }
+    req.open("POST", "/api/user-classification", true);
+    req.send(JSON.stringify({
+        "edit_id": parseInt(editId),
+        "comment": document.getElementById("comment").value,
+        "classification": classification,
+        "confirmation": confirmation,
+    }));
+}
+
 function renderEdit(editId) {
     let urlType = "n";
     document.getElementsByName("url_type").forEach(function(radio) {
@@ -24,6 +61,8 @@ function renderEdit(editId) {
 }
 
 function loadNextEditId() {
+    document.getElementById("comment").value = "";
+
     let req = new XMLHttpRequest();
     req.onreadystatechange = function(){
         if (this.readyState !== 4) {

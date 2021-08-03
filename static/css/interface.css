@@ -36,6 +36,13 @@ body {
     padding-left: 1em;
 }
 
+#top #classify {
+    position: absolute;
+    top: 0;
+    left: 40%;
+    padding-left: 1em;
+}
+
 #top #username, #top #count, #top #editid, #top #goto {
     margin-right: 1em;
 }

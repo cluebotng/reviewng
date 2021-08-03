@@ -74,13 +74,59 @@ func (app *App) ApiUserClassificationCreateHandler(w http.ResponseWriter, r *htt
 		return
 	}
 
+	userClassification := struct {
+		EditId         int    `json:"edit_id"`
+		Classification int    `json:"classification"`
+		Comment        string `json:"comment"`
+		Confirmation   bool   `json:"confirmation"`
+	}{}
+
 	// Decode the request
-	var newUserClassification db.UserClassification
-	if err := json.NewDecoder(r.Body).Decode(&newUserClassification); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&userClassification); err != nil {
 		panic(err)
 	}
 
-	if err := app.dbh.CreateUserClassification(newUserClassification); err != nil {
+	edit, err := app.dbh.LookupEditById(userClassification.EditId)
+	if err != nil {
+		panic(err)
+	}
+
+	if edit == nil {
+		http.Error(w, "Not Found", 404)
+		return
+	}
+
+	editClassification, err := app.dbh.CalculateEditClassification(edit)
+	if err != nil {
+		panic(err)
+	}
+
+	// Ask the user to confirm if the classification is statistically different
+	requiresConfirmation := false
+	if editClassification != db.EDIT_CLASSIFICATION_UNKNOWN && editClassification != userClassification.Classification {
+		if !userClassification.Confirmation {
+			requiresConfirmation = true
+		}
+	}
+
+	if !requiresConfirmation {
+		// We are all good - either confirmed or inline
+		if err := app.dbh.CreateUserClassification(db.UserClassification{
+			UserId:         user.Id,
+			Comment:        userClassification.Comment,
+			Classification: userClassification.Classification,
+			EditId:         userClassification.EditId,
+		}); err != nil {
+			panic(err)
+		}
+	}
+
+	response, err := json.Marshal(map[string]bool{"require_confirmation": requiresConfirmation})
+	if err != nil {
+		panic(err)
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if _, err := w.Write(response); err != nil {
 		panic(err)
 	}
 }
