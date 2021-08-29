@@ -50,6 +50,10 @@ type Config struct {
 		UpdateStats bool `yaml:"update_stats"`
 		AdminOnly   bool `yaml:"admin_only"`
 	}
+	Wikipedia struct {
+		Username string `yaml:"username"`
+		Password   string `yaml:"password"`
+	}
 }
 
 func LoadConfigFromDisk(configPath string) (*Config, error) {

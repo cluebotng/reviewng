@@ -134,8 +134,14 @@ func (app *App) ApiCronStatsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if app.config.App.UpdateStats {
-		if err := wikipedia.UpdatePage(tpl.String()); err != nil {
-			panic(err)
+		if app.config.Wikipedia.Username != "" {
+			if err := wikipedia.UpdatePageWithCredentials(tpl.String(), app.config.Wikipedia.Username, app.config.Wikipedia.Password); err != nil {
+				panic(err)
+			}
+		} else {
+			if err := wikipedia.UpdatePage(""); err != nil {
+				panic(err)
+			}
 		}
 	}
 

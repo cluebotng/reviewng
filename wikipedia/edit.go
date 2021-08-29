@@ -27,20 +27,142 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/http/cookiejar"
 	"net/url"
 )
 
+func getLoginToken(httpClient *http.Client) (string, error) {
+	resp, err := httpClient.Get("https://en.wikipedia.org/w/api.php?action=query&meta=tokens&type=login&format=json")
+	if err != nil {
+		return "", nil
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", nil
+	}
+	if err := resp.Body.Close(); err != nil {
+		return "", nil
+	}
+
+	data := struct {
+		Query struct {
+			Tokens struct {
+				LoginToken string `json:"logintoken"`
+			} `json:"tokens"`
+		} `json:"query"`
+	}{}
+	if err := json.Unmarshal(body, &data); err != nil {
+		return "", nil
+	}
+	return data.Query.Tokens.LoginToken, nil
+}
+
+func getCsrfToken(httpClient *http.Client) (string, error) {
+	resp, err := httpClient.Get("https://en.wikipedia.org/w/api.php?action=query&meta=tokens&format=json")
+	if err != nil {
+		return "", nil
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", nil
+	}
+	if err := resp.Body.Close(); err != nil {
+		return "", nil
+	}
+
+	data := struct {
+		Query struct {
+			Tokens struct {
+				CsrfToken string `json:"csrftoken"`
+			} `json:"tokens"`
+		} `json:"query"`
+	}{}
+	if err := json.Unmarshal(body, &data); err != nil {
+		return "", nil
+	}
+	return data.Query.Tokens.CsrfToken, nil
+}
+
+func login(httpClient *http.Client, username, password, token string) error {
+	form := url.Values{}
+	form.Add("action", "login")
+	form.Add("lgname", username)
+	form.Add("lgpassword", password)
+	form.Add("lgtoken", token)
+	form.Add("format", "json")
+	resp, err := httpClient.PostForm("https://en.wikipedia.org/w/api.php", form)
+	if err != nil {
+		return nil
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil
+	}
+	if err := resp.Body.Close(); err != nil {
+		return err
+	}
+
+	data := struct {
+		Login struct {
+			Result string
+		}
+	}{}
+	if err := json.Unmarshal(body, &data); err != nil {
+		return err
+	}
+
+	if data.Login.Result != "Success" {
+		return fmt.Errorf("API error: %s", body)
+	}
+	return nil
+}
+
 func UpdatePage(contents string) error {
+	httpClient := &http.Client{}
+	return updatePage(httpClient, contents)
+}
+
+func UpdatePageWithCredentials(contents, username, password string) error {
+	jar, err := cookiejar.New(nil)
+	if err != nil {
+		return err
+	}
+
+	httpClient := &http.Client{Jar: jar}
+
+	loginToken, err := getLoginToken(httpClient)
+	if err != nil {
+		panic(err)
+	}
+
+	if err := login(httpClient, username, password, loginToken); err != nil {
+		panic(err)
+	}
+
+	return updatePage(httpClient, contents)
+}
+
+func updatePage(httpClient *http.Client, contents string) error {
+	csrfToken, err := getCsrfToken(httpClient)
+	if err != nil {
+		return nil
+	}
 	form := url.Values{}
 	form.Add("action", "edit")
 	form.Add("title", "User:ClueBot NG/ReviewInterface/Stats")
 	form.Add("summary", "Uploading Stats")
-	form.Add("token", "+\\")
+	form.Add("token", csrfToken)
 	form.Add("format", "json")
 	form.Add("text", contents)
 
-	resp, _ := http.PostForm("https://en.wikipedia.org/w/api.php", form)
-	body, _ := ioutil.ReadAll(resp.Body)
+	resp, err := httpClient.PostForm("https://en.wikipedia.org/w/api.php", form)
+	if err != nil {
+		return nil
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil
+	}
 	if err := resp.Body.Close(); err != nil {
 		return err
 	}
@@ -59,7 +181,7 @@ func UpdatePage(contents string) error {
 	}
 
 	if data.Edit.Result != "Success" {
-		return fmt.Errorf("API error: %s", data.Edit.Result)
+		return fmt.Errorf("API error: %s", body)
 	}
 	return nil
 }
