@@ -37,7 +37,7 @@ func (app *App) ReviewHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Not approved, return an error
-	if !user.Approved {
+	if !user.Approved || (app.config.App.AdminOnly && !user.Admin) {
 		http.Error(w, "Forbidden", 403)
 		return
 	}

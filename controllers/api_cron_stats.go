@@ -133,7 +133,7 @@ func (app *App) ApiCronStatsHandler(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	if app.config.Wikipedia.UpdateStats {
+	if app.config.App.UpdateStats {
 		if err := wikipedia.UpdatePage(tpl.String()); err != nil {
 			panic(err)
 		}

@@ -23,6 +23,7 @@ package controllers
 // SOFTWARE.
 
 import (
+	"html/template"
 	"net/http"
 )
 
@@ -38,5 +39,14 @@ func (app *App) AdminHandler(w http.ResponseWriter, r *http.Request) {
 	if !user.Admin {
 		http.Error(w, "Forbidden", 403)
 		return
+	}
+
+	t, err := template.ParseFS(app.fsTemplates, "templates/admin/dashboard.tmpl")
+	if err != nil {
+		panic(err)
+	}
+
+	if err := t.Execute(w, nil); err != nil {
+		panic(err)
 	}
 }

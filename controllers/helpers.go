@@ -67,3 +67,16 @@ func ConvertClassificationToString(classification int) string {
 	}
 	return "U"
 }
+
+func ConvertClassificationToHumanString(classification int) string {
+	if classification == db.EDIT_CLASSIFICATION_VANDALISM {
+		return "Vandalism"
+	}
+	if classification == db.EDIT_CLASSIFICATION_CONSTRUCTIVE {
+		return "Constructive"
+	}
+	if classification == db.EDIT_CLASSIFICATION_SKIPPED {
+		return "Skipped"
+	}
+	return "Unknown"
+}

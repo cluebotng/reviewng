@@ -36,11 +36,16 @@
             You need to log in, <a href="/login">here is a link</a>.
         </p>
         {{- else }}
-        {{- if not .User.Approved }}
+        {{-  if not .User.Approved }}
         <p>
             Your account is pending approval.
         </p>
-        {{- else }}
+        {{-  else }}
+        {{-   if .AdminOnly }}
+        <p>
+            Interface is currently in admin only mode.
+        </p>
+        {{-   else }}
         <p>
             In the review interface, you will have a browser window with Wikipedia articles, and a window sitting on top
             where you can classify edits.
@@ -80,15 +85,16 @@
         <p>
             To get started, <a href="/review">click here</a>.
         </p>
-        {{- if .User.Admin }}
+        {{-   end }}
+        {{-   if .User.Admin }}
         <p>
             I see you are an admin. Here are some links for you:
         </p>
         <ul>
             <li><a href="/admin">Admin panel</a></li>
         </ul>
-        {{- end }}
-        {{- end }}
+        {{-   end }}
+        {{-  end }}
         {{- end }}
     </div>
     <div id="stats">

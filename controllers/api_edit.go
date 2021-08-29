@@ -95,6 +95,12 @@ func (app *App) ApiEditNextHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Not approved, return an error
+	if !user.Approved || (app.config.App.AdminOnly && !user.Admin) {
+		http.Error(w, "Forbidden", 403)
+		return
+	}
+
 	// Get an edit
 	edit, err := app.dbh.CalculateRandomPendingEditForUser(user)
 	if err != nil {

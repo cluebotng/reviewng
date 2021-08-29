@@ -123,11 +123,18 @@ func (app *App) initializeRoutes() {
 	app.router.HandleFunc("/api/report/export", app.ApiReportExportHandler).Methods("GET")
 
 	app.router.HandleFunc("/api/export/done", app.ApiExportDoneHandler).Methods("GET")
+	app.router.HandleFunc("/api/export/done.json", app.ApiExportDoneJsonHandler).Methods("GET")
 	app.router.HandleFunc("/api/export/dump", app.ApiExportDumpHandler).Methods("GET")
+	app.router.HandleFunc("/api/export/dump.json", app.ApiExportDumpJsonHandler).Methods("GET")
 
 	app.router.HandleFunc("/", app.WelcomeHandler).Methods("GET")
 	app.router.HandleFunc("/review", app.ReviewHandler).Methods("GET")
+
 	app.router.HandleFunc("/admin", app.AdminHandler).Methods("GET")
+	app.router.HandleFunc("/admin/users", app.AdminUsersHandler).Methods("GET")
+	app.router.HandleFunc("/admin/edit-groups", app.AdminEditGroupsHandler).Methods("GET")
+	app.router.HandleFunc("/admin/edit-groups/{id}", app.AdminEditGroupDetailHandler).Methods("GET")
+	app.router.HandleFunc("/admin/details/{id}", app.AdminEditDetailsHandler).Methods("GET")
 }
 
 func (app *App) RunForever(addr string) {

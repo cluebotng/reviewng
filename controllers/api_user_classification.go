@@ -74,6 +74,12 @@ func (app *App) ApiUserClassificationCreateHandler(w http.ResponseWriter, r *htt
 		return
 	}
 
+	// Not approved, return an error
+	if !user.Approved || (app.config.App.AdminOnly && !user.Admin) {
+		http.Error(w, "Forbidden", 403)
+		return
+	}
+
 	userClassification := struct {
 		EditId         int    `json:"edit_id"`
 		Classification int    `json:"classification"`

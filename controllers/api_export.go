@@ -23,6 +23,7 @@ package controllers
 // SOFTWARE.
 
 import (
+	"encoding/json"
 	"encoding/xml"
 	"github.com/cluebotng/reviewng/db"
 	"net/http"
@@ -196,6 +197,22 @@ func (app *App) ApiExportDoneHandler(w http.ResponseWriter, r *http.Request) {
 
 	data := calculateDataDump(app, true)
 	if err := encoder.Encode(&data); err != nil {
+		panic(err)
+	}
+}
+
+func (app *App) ApiExportDumpJsonHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	data := calculateDataDump(app, false)
+	if err := json.NewEncoder(w).Encode(&data); err != nil {
+		panic(err)
+	}
+}
+
+func (app *App) ApiExportDoneJsonHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	data := calculateDataDump(app, true)
+	if err := json.NewEncoder(w).Encode(&data); err != nil {
 		panic(err)
 	}
 }

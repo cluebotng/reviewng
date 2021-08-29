@@ -23,50 +23,54 @@ package controllers
 // SOFTWARE.
 
 import (
-	"encoding/json"
-	"github.com/cluebotng/reviewng/db"
-	"io/ioutil"
+	"html/template"
 	"net/http"
 )
 
-func (app *App) ApiReportImportHandler(w http.ResponseWriter, r *http.Request) {
-	resp, _ := http.Get("https://cluebotng.toolforge.org/api/?action=review.export")
-	body, _ := ioutil.ReadAll(resp.Body)
-	if err := resp.Body.Close(); err != nil {
-		panic(err)
+func (app *App) AdminEditGroupsHandler(w http.ResponseWriter, r *http.Request) {
+	// Not logged in, send to the login page
+	user := app.getAuthenticatedUser(r)
+	if user == nil {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
 	}
 
-	// Create a map of known ids
-	knownEditIds := map[int]bool{}
-	allEdits, err := app.dbh.FetchAllEdits()
-	if err != nil {
-		panic(err)
-	}
-	for _, edit := range allEdits {
-		knownEditIds[edit.Id] = false
+	// Not an admin, return an error
+	if !user.Admin {
+		http.Error(w, "Forbidden", 403)
+		return
 	}
 
-	// Fetch the edit group we log these into
-	eg, err := app.dbh.LookupEditGroupByName("Report Interface Import")
+	t, err := template.ParseFS(app.fsTemplates, "templates/admin/edit_groups.tmpl")
 	if err != nil {
 		panic(err)
 	}
 
-	// Create entries for everything we don't know about
-	editIds := []int{}
-	if err := json.Unmarshal(body, &editIds); err != nil {
+	if err := t.Execute(w, nil); err != nil {
+		panic(err)
+	}
+}
+
+func (app *App) AdminEditGroupDetailHandler(w http.ResponseWriter, r *http.Request) {
+	// Not logged in, send to the login page
+	user := app.getAuthenticatedUser(r)
+	if user == nil {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+
+	// Not an admin, return an error
+	if !user.Admin {
+		http.Error(w, "Forbidden", 403)
+		return
+	}
+
+	t, err := template.ParseFS(app.fsTemplates, "templates/admin/edit_group.tmpl")
+	if err != nil {
 		panic(err)
 	}
 
-	for _, newEditId := range editIds {
-		// Already have this edit, ignore it
-		if _, ok := knownEditIds[newEditId]; ok {
-			continue
-		}
-
-		// Create a new entry
-		if err := app.dbh.CreateEdit(newEditId, eg, 2, db.EDIT_CLASSIFICATION_CONSTRUCTIVE); err != nil {
-			panic(err)
-		}
+	if err := t.Execute(w, nil); err != nil {
+		panic(err)
 	}
 }
