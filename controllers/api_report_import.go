@@ -23,15 +23,14 @@ package controllers
 // SOFTWARE.
 
 import (
+	"encoding/json"
 	"github.com/cluebotng/reviewng/db"
 	"io/ioutil"
 	"net/http"
-	"strconv"
-	"strings"
 )
 
 func (app *App) ApiReportImportHandler(w http.ResponseWriter, r *http.Request) {
-	resp, _ := http.Get("https://cluebotng.toolforge.org/api.php")
+	resp, _ := http.Get("https://cluebotng.toolforge.org/api/?action=review.export")
 	body, _ := ioutil.ReadAll(resp.Body)
 	if err := resp.Body.Close(); err != nil {
 		panic(err)
@@ -54,12 +53,12 @@ func (app *App) ApiReportImportHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create entries for everything we don't know about
-	for _, line := range strings.Split(string(body), "\n") {
-		newEditId, err := strconv.Atoi(line)
-		if err != nil {
-			panic(err)
-		}
+	editIds := []int{}
+	if err := json.Unmarshal(body, &editIds); err != nil {
+		panic(err)
+	}
 
+	for _, newEditId := range editIds {
 		// Already have this edit, ignore it
 		if _, ok := knownEditIds[newEditId]; ok {
 			continue
