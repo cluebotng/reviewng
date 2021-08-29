@@ -24,6 +24,7 @@ package main
 
 import (
 	"embed"
+	"fmt"
 	"github.com/cluebotng/reviewng/cfg"
 	"github.com/cluebotng/reviewng/controllers"
 	"os"
@@ -47,5 +48,12 @@ func main() {
 	}
 
 	app := controllers.NewApp(config, &fsTemplates, &fsStatic)
-	app.RunForever("0.0.0.0:8080")
+
+	listenAddr := "0.0.0.0:8080"
+	if val, ok := os.LookupEnv("PORT"); ok {
+		listenAddr = fmt.Sprintf("0.0.0.0:%s", val)
+	}
+
+	fmt.Printf("Listening on %+v\n", listenAddr)
+	app.RunForever(listenAddr)
 }
