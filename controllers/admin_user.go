@@ -23,11 +23,12 @@ package controllers
 // SOFTWARE.
 
 import (
+	"github.com/cluebotng/reviewng/db"
 	"html/template"
 	"net/http"
 )
 
-func (app *App) AdminHandler(w http.ResponseWriter, r *http.Request) {
+func (app *App) AdminUsersHandler(w http.ResponseWriter, r *http.Request) {
 	// Not logged in, send to the login page
 	user := app.getAuthenticatedUser(r)
 	if user == nil {
@@ -41,12 +42,17 @@ func (app *App) AdminHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	t, err := template.ParseFS(app.fsTemplates, "templates/admin/dashboard.tmpl")
+	allUsers, err := app.dbh.FetchAllUsers()
 	if err != nil {
 		panic(err)
 	}
 
-	if err := t.Execute(w, nil); err != nil {
+	t, err := template.ParseFS(app.fsTemplates, "templates/admin/users.tmpl")
+	if err != nil {
+		panic(err)
+	}
+
+	if err := t.Execute(w, struct{ Users []*db.User }{allUsers}); err != nil {
 		panic(err)
 	}
 }

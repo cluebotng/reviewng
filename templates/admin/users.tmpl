@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ClueBot Review Interface - Admin</title>
+    <script type="text/javascript" src="/static/js/admin.js"></script>
+</head>
+<body>
+<h3>Users</h3>
+<table style="width: 100%">
+    <thead>
+    <tr>
+        <td>Username</td>
+        <td>Approved</td>
+        <td>Admin</td>
+        <td>LegacyCount</td>
+    </tr>
+    </thead>
+    <tbody>
+    {{ range $u := .Users }}
+    <tr>
+        <td>{{ $u.Username }}</td>
+        <td>{{ $u.Approved }}</td>
+        <td>{{ $u.Admin }}</td>
+        <td>{{ $u.LegacyCount }}</td>
+    </tr>
+    {{ end }}
+    </tbody>
+</table>
+</body>
+</html>

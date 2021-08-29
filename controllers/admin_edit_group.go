@@ -27,7 +27,7 @@ import (
 	"net/http"
 )
 
-func (app *App) AdminHandler(w http.ResponseWriter, r *http.Request) {
+func (app *App) AdminEditGroupsHandler(w http.ResponseWriter, r *http.Request) {
 	// Not logged in, send to the login page
 	user := app.getAuthenticatedUser(r)
 	if user == nil {
@@ -41,7 +41,31 @@ func (app *App) AdminHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	t, err := template.ParseFS(app.fsTemplates, "templates/admin/dashboard.tmpl")
+	t, err := template.ParseFS(app.fsTemplates, "templates/admin/edit_groups.tmpl")
+	if err != nil {
+		panic(err)
+	}
+
+	if err := t.Execute(w, nil); err != nil {
+		panic(err)
+	}
+}
+
+func (app *App) AdminEditGroupDetailHandler(w http.ResponseWriter, r *http.Request) {
+	// Not logged in, send to the login page
+	user := app.getAuthenticatedUser(r)
+	if user == nil {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+
+	// Not an admin, return an error
+	if !user.Admin {
+		http.Error(w, "Forbidden", 403)
+		return
+	}
+
+	t, err := template.ParseFS(app.fsTemplates, "templates/admin/edit_group.tmpl")
 	if err != nil {
 		panic(err)
 	}

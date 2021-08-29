@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ClueBot Review Interface - Admin</title>
+    <script type="text/javascript" src="/static/js/admin.js"></script>
+</head>
+<body>
+    <h2>Edit {{ .Edit.Id }}</h2>
+    <p>Required: {{ .Edit.Required }}</p>
+    <p>Original Classification: {{ .Edit.Classification }}</p>
+    <p>New Classification: {{ .CurrentClassification }}</p>
+    <h3>User Reviews</h3>
+    <table style="width: 100%">
+        <thead>
+            <tr>
+                <td>Username</td>
+                <td>Classification</td>
+                <td>Comment</td>
+            </tr>
+        </thead>
+        <tbody>
+        {{ range $c := .UserClassifications }}
+            <tr>
+                <td>{{ $c.Username }}</td>
+                <td>{{ $c.Classification }}</td>
+                <td>{{ $c.Comment }}</td>
+            </tr>
+        {{ end }}
+        </tbody>
+    </table>
+</body>
+</html>

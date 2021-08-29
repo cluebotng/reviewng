@@ -13,6 +13,7 @@
         in order for this application to display correctly.
     </div>
 </noscript>
+
 <div id="iframediv">
     <iframe src="about:blank" id="iframe" frameborder="0"></iframe>
 </div>
@@ -28,10 +29,10 @@
         <button type="button" onclick="classifyEdit(0, false)">Vandalism</button>
         <button type="button" onclick="classifyEdit(1, false)">Constructive</button>
         <button type="button" onclick="classifyEdit(2, false)">Skip</button>
-        <input type="text" id="comment" />
+        <input type="text" id="comment" placeholder="Comment" />
     </span>
 
-    <span id="edit">Edit: <span id="editid"></span></span>
+    <span id="edit">Edit: <span id="editid"{{ if .User.Admin }} onclick="loadDetails()"{{ end }}></span></span>
     <span id="username">Username: {{ .User.Username }}</span>
 </div>
 </body>

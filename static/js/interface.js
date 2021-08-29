@@ -81,6 +81,11 @@ function loadNextEditId() {
     req.send();
 }
 
+function loadDetails() {
+    let editId = document.getElementById("editid").innerText;
+    window.open("/admin/details/" + editId, true);
+}
+
 window.onload = function() {
     loadNextEditId();
 }
