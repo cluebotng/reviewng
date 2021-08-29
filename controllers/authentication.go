@@ -24,13 +24,17 @@ package controllers
 
 import (
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"github.com/cluebotng/reviewng/db"
 	"github.com/dghubble/oauth1"
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"time"
 )
 
 func (app *App) LoginHandler(w http.ResponseWriter, r *http.Request) {
@@ -53,6 +57,37 @@ func (app *App) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Redirect(w, r, authorizationURL.String(), http.StatusFound)
+}
+
+func decodeJwt(jwt []byte, secret string) map[string]interface{} {
+	bodyParts := strings.Split(string(jwt), ".")
+	jwtHeader, _ := base64.RawURLEncoding.DecodeString(bodyParts[0])
+	jwtPayload, _ := base64.RawURLEncoding.DecodeString(bodyParts[1])
+	jwtSignature, _ := base64.StdEncoding.DecodeString(bodyParts[2])
+
+	jwtHeaderData := map[string]interface{}{}
+	if err := json.Unmarshal(jwtHeader, &jwtHeaderData); err != nil {
+		panic(err)
+	}
+
+	// Verify the response
+	if jwtHeaderData["typ"] != "JWT" || jwtHeaderData["alg"] != "HS256" {
+		panic(fmt.Sprintf("Unknown algorithm: %+v", jwtHeaderData))
+	}
+
+	// Verify the signature
+	h := hmac.New(sha256.New, []byte(secret))
+	h.Write([]byte(fmt.Sprintf("%s.%s", bodyParts[0], bodyParts[1])))
+	expectedSignature := h.Sum(nil)
+	if hmac.Equal(jwtSignature, expectedSignature) {
+		panic(fmt.Sprintf("Incorrect signature %+v vs %+v", string(jwtSignature), string(expectedSignature)))
+	}
+
+	jwtPayloadData := map[string]interface{}{}
+	if err := json.Unmarshal(jwtPayload, &jwtPayloadData); err != nil {
+		panic(err)
+	}
+	return jwtPayloadData
 }
 
 func (app *App) LoginCallbackHandler(w http.ResponseWriter, r *http.Request) {
@@ -80,13 +115,20 @@ func (app *App) LoginCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	if err := resp.Body.Close(); err != nil {
 		panic(err)
 	}
+	jwtPayload := decodeJwt(body, app.config.OAuth.Secret)
 
-	identity := map[string]interface{}{}
-	s, _ := base64.StdEncoding.DecodeString(strings.Split(string(body), ".")[1])
+	// Check the payload data
+	if jwtPayload["iss"] != "https://en.wikipedia.org" {
+		panic(fmt.Sprintf("Invalid issuer: %+v", jwtPayload["iss"]))
+	}
 
-	// TODO: Verify the signature of the JWT using our private key
-	if err := json.Unmarshal(s, &identity); err != nil {
-		panic(err)
+	if jwtPayload["aud"] != app.oauth.ConsumerKey {
+		panic(fmt.Sprintf("Invalid audience: %+v", jwtPayload["aud"]))
+	}
+
+	currentTime := float64(time.Now().Unix())
+	if jwtPayload["iat"].(float64) > currentTime+2 || jwtPayload["iat"].(float64) < currentTime {
+		panic(fmt.Sprintf("Invalid issue time: %+v (%+v)", jwtPayload["iat"], currentTime))
 	}
 
 	// We're done with the initial secret
@@ -94,7 +136,7 @@ func (app *App) LoginCallbackHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Lookup the user by name from the identity data
 	var user *db.User
-	user, err = app.dbh.LookupUserByName(identity["username"].(string))
+	user, err = app.dbh.LookupUserByName(jwtPayload["username"].(string))
 	if err != nil {
 		panic(err)
 	}
@@ -102,7 +144,7 @@ func (app *App) LoginCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	// Need to create a user
 	if user == nil {
 		if err := app.dbh.CreateUser(db.User{
-			Username: identity["username"].(string),
+			Username: jwtPayload["username"].(string),
 			Admin:    false,
 			Approved: false,
 		}); err != nil {
@@ -110,7 +152,7 @@ func (app *App) LoginCallbackHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Lookup the user
-		user, err = app.dbh.LookupUserByName(identity["username"].(string))
+		user, err = app.dbh.LookupUserByName(jwtPayload["username"].(string))
 		if err != nil {
 			panic(err)
 		}
