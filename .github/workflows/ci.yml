@@ -15,12 +15,36 @@ jobs:
       - run: go build
   test:
     runs-on: ubuntu-20.04
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ''
+          MYSQL_DATABASE: cbng_review
+          MYSQL_ALLOW_EMPTY_PASSWORD: yes
+        ports:
+          - '3306:3306'
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-go@v2
         with:
           go-version: '^1.16'
+      - name: Setup MySQL
+        run: |
+          while true;
+          do
+            if [ "$(mysql -h 127.0.0.1 -u root -N -s -e 'select 1' 2> /dev/null)" == "1" ];
+            then
+              break
+            fi
+          sleep 1
+          done
+
+          mysql -h 127.0.0.1 -u root cbng_review < sql/schema.sql
+          cat sql/data.*.sql | mysql cbng_review -h 127.0.0.1 -u root
       - run: go test
+        env:
+          REVIEW_CFG: .github/config.yaml
   vet:
     runs-on: ubuntu-20.04
     steps:

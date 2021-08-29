@@ -1,0 +1,13 @@
+db:
+  host: 127.0.0.1
+  user: root
+  pass:
+  name: cbng_review
+session:
+  key: ci session key
+oauth:
+  token: ci session oauth token
+  secret: ci session oauth secret
+app:
+  update_stats: false
+  admin_only: true
