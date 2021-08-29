@@ -1,4 +1,4 @@
-package cfg
+package controllers
 
 // MIT License
 //
@@ -23,46 +23,22 @@ package cfg
 // SOFTWARE.
 
 import (
-	"gopkg.in/yaml.v2"
-	"io/ioutil"
+	"encoding/json"
+	"net/http"
 )
 
-var ReleaseTag = "development"
-
-type Config struct {
-	Runtime struct {
-		Release string
-	}
-	Session struct {
-		SecretKey string
-	}
-	Db struct {
-		Host string
-		User string
-		Pass string
-		Name string
-	}
-	OAuth struct {
-		Token  string
-		Secret string
-	}
-	App struct {
-		UpdateStats bool `yaml:"update_stats"`
-		AdminOnly   bool `yaml:"admin_only"`
-	}
-}
-
-func LoadConfigFromDisk(configPath string) (*Config, error) {
-	data, err := ioutil.ReadFile(configPath)
+func (app *App) ApiConfigHandler(w http.ResponseWriter, r *http.Request) {
+	response, err := json.Marshal(map[string]interface{}{
+		"release":      app.config.Runtime.Release,
+		"update_stats": app.config.App.UpdateStats,
+		"admin_only":   app.config.App.AdminOnly,
+	})
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
 
-	config := Config{}
-	if err := yaml.Unmarshal([]byte(data), &config); err != nil {
-		return nil, err
+	w.Header().Set("Content-Type", "application/json")
+	if _, err := w.Write(response); err != nil {
+		panic(err)
 	}
-
-	config.Runtime.Release = ReleaseTag
-	return &config, nil
 }

@@ -126,6 +126,7 @@ func (app *App) initializeRoutes() {
 	app.router.HandleFunc("/api/export/done.json", app.ApiExportDoneJsonHandler).Methods("GET")
 	app.router.HandleFunc("/api/export/dump", app.ApiExportDumpHandler).Methods("GET")
 	app.router.HandleFunc("/api/export/dump.json", app.ApiExportDumpJsonHandler).Methods("GET")
+	app.router.HandleFunc("/api/config", app.ApiConfigHandler).Methods("GET")
 
 	app.router.HandleFunc("/", app.WelcomeHandler).Methods("GET")
 	app.router.HandleFunc("/review", app.ReviewHandler).Methods("GET")
