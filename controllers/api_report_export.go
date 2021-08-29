@@ -24,7 +24,6 @@ package controllers
 
 import (
 	"encoding/json"
-	"github.com/cluebotng/reviewng/db"
 	"net/http"
 )
 
@@ -40,9 +39,7 @@ func (app *App) ApiReportExportHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			panic(err)
 		}
-		if editClassification != db.EDIT_CLASSIFICATION_UNKNOWN {
-			editClassifications[edit.Id] = editClassification
-		}
+		editClassifications[edit.Id] = editClassification
 	}
 
 	response, err := json.Marshal(editClassifications)
