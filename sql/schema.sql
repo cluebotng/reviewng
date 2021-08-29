@@ -2,7 +2,7 @@ DROP TABLE IF EXISTS `users`;
 CREATE TABLE `users`
 (
     `id`           int          NOT NULL AUTO_INCREMENT,
-    `username`     varchar(512) NOT NULL,
+    `username`     varchar(100) NOT NULL,
     `approved`     tinyint(1) NOT NULL DEFAULT 0,
     `admin`        tinyint(1) NOT NULL DEFAULT 0,
     `legacy_count` int          NOT NULL DEFAULT 0,
@@ -10,7 +10,7 @@ CREATE TABLE `users`
     UNIQUE KEY `username` (`username`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
-  COLLATE = utf8mb4_0900_ai_ci;
+  COLLATE = utf8mb4_bin;
 
 DROP TABLE IF EXISTS `user_classification`;
 CREATE TABLE `user_classification`
@@ -27,7 +27,7 @@ CREATE TABLE `user_classification`
     UNIQUE KEY `user_edit` (`user_id`, `edit_id`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
-  COLLATE = utf8mb4_0900_ai_ci;
+  COLLATE = utf8mb4_bin;
 
 DROP TABLE IF EXISTS `edit_group`;
 CREATE TABLE `edit_group`
@@ -38,7 +38,7 @@ CREATE TABLE `edit_group`
     PRIMARY KEY (`id`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
-  COLLATE = utf8mb4_0900_ai_ci;
+  COLLATE = utf8mb4_bin;
 
 DROP TABLE IF EXISTS `edit`;
 CREATE TABLE `edit`
@@ -51,4 +51,4 @@ CREATE TABLE `edit`
     INDEX            `edit_group_id` (`edit_group_id`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
-  COLLATE = utf8mb4_0900_ai_ci;
+  COLLATE = utf8mb4_bin;
