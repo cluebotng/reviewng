@@ -43,6 +43,7 @@ type Config struct {
 	}
 	App struct {
 		UpdateStats bool `yaml:"update_stats"`
+		AdminOnly   bool `yaml:"admin_only"`
 	}
 }
 

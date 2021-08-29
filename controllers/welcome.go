@@ -65,9 +65,11 @@ func (app *App) WelcomeHandler(w http.ResponseWriter, r *http.Request) {
 	if err := t.Execute(w, struct {
 		User              *db.User
 		ContributionStats []userContributions
+		AdminOnly         bool
 	}{
 		User:              user,
 		ContributionStats: contributionStats,
+		AdminOnly:         app.config.App.AdminOnly,
 	}); err != nil {
 		panic(err)
 	}
