@@ -30,8 +30,16 @@ import (
 )
 
 func (app *App) ApiReportImportHandler(w http.ResponseWriter, r *http.Request) {
-	resp, _ := http.Get("https://cluebotng.toolforge.org/api/?action=review.export")
-	body, _ := ioutil.ReadAll(resp.Body)
+	resp, err := http.Get("https://cluebotng.toolforge.org/api/?action=review.export")
+	if err != nil {
+		panic(err)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		panic(err)
+	}
+
 	if err := resp.Body.Close(); err != nil {
 		panic(err)
 	}

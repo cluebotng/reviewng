@@ -61,9 +61,20 @@ func (app *App) LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 func decodeJwt(jwt []byte, secret string) map[string]interface{} {
 	bodyParts := strings.Split(string(jwt), ".")
-	jwtHeader, _ := base64.RawURLEncoding.DecodeString(bodyParts[0])
-	jwtPayload, _ := base64.RawURLEncoding.DecodeString(bodyParts[1])
-	jwtSignature, _ := base64.StdEncoding.DecodeString(bodyParts[2])
+	jwtHeader, err := base64.RawURLEncoding.DecodeString(bodyParts[0])
+	if err != nil {
+		panic(err)
+	}
+
+	jwtPayload, err := base64.RawURLEncoding.DecodeString(bodyParts[1])
+	if err != nil {
+		panic(err)
+	}
+
+	jwtSignature, err := base64.StdEncoding.DecodeString(bodyParts[2])
+	if err != nil {
+		panic(err)
+	}
 
 	jwtHeaderData := map[string]interface{}{}
 	if err := json.Unmarshal(jwtHeader, &jwtHeaderData); err != nil {
@@ -110,8 +121,16 @@ func (app *App) LoginCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	// Using the access token fetch the identity
 	token := oauth1.NewToken(accessToken, accessSecret)
 	httpClient := app.oauth.Client(context.Background(), token)
-	resp, _ := httpClient.Get("https://en.wikipedia.org/w/index.php?title=Special:OAuth/identify")
-	body, _ := ioutil.ReadAll(resp.Body)
+	resp, err := httpClient.Get("https://en.wikipedia.org/w/index.php?title=Special:OAuth/identify")
+	if err != nil {
+		panic(err)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		panic(err)
+	}
+
 	if err := resp.Body.Close(); err != nil {
 		panic(err)
 	}
