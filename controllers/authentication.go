@@ -71,10 +71,7 @@ func decodeJwt(jwt []byte, secret string) map[string]interface{} {
 		panic(err)
 	}
 
-	jwtSignature, err := base64.StdEncoding.DecodeString(bodyParts[2])
-	if err != nil {
-		panic(err)
-	}
+	jwtSignature := []byte(bodyParts[2])
 
 	jwtHeaderData := map[string]interface{}{}
 	if err := json.Unmarshal(jwtHeader, &jwtHeaderData); err != nil {
