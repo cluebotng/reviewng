@@ -62,7 +62,8 @@ EOL
 
 
 def _restart():
-    c.sudo(f'webservice --backend=kubernetes golang111 restart {TOOL_DIR / "reviewng"}')
+    c.sudo(f'webservice --backend=kubernetes golang111 stop {TOOL_DIR / "reviewng"}')
+    c.sudo(f'webservice --backend=kubernetes golang111 start {TOOL_DIR / "reviewng"}')
 
 
 @task()
