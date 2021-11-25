@@ -63,13 +63,15 @@ func calculateUserContributionStats(app *App) []userContributionStat {
 		if err != nil {
 			panic(err)
 		}
-		stats = append(stats, userContributionStat{
-			Username:           user.Username,
-			EditCount:          userTotal,
-			Admin:              user.Admin,
-			AccuracyCount:      userAccuracy.EditCount,
-			AccuracyPercentage: userAccuracy.Percentage,
-		})
+		if user.Approved {
+			stats = append(stats, userContributionStat{
+				Username:           user.Username,
+				EditCount:          userTotal,
+				Admin:              user.Admin,
+				AccuracyCount:      userAccuracy.EditCount,
+				AccuracyPercentage: userAccuracy.Percentage,
+			})
+		}
 	}
 
 	return stats
