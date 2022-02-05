@@ -44,10 +44,20 @@ DROP TABLE IF EXISTS `edit`;
 CREATE TABLE `edit`
 (
     `id`             int NOT NULL,
-    `edit_group_id`  int NOT NULL,
     `required`       int NOT NULL,
     `classification` int NOT NULL,
-    PRIMARY KEY (`id`),
+    PRIMARY KEY (`id`)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_bin;
+
+DROP TABLE IF EXISTS `edit_edit_group`;
+CREATE TABLE `edit_edit_group`
+(
+    `edit_id`             int NOT NULL,
+    `edit_group_id`  int NOT NULL,
+    PRIMARY KEY (`edit_id`, `edit_group_id`),
+    INDEX            `edit_id` (`edit_id`),
     INDEX            `edit_group_id` (`edit_group_id`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4

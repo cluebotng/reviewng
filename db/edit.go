@@ -23,9 +23,12 @@ package db
 // SOFTWARE.
 
 type Edit struct {
-	Id             int
-	Required       int
-	Classification int
+	Id                              int
+	Required                        int
+	Classification                  int
+	UserClassificationsVandalism    int
+	UserClassificationsConstructive int
+	UserClassificationsSkipped      int
 }
 
 func MaxInt(x, y int) int {
@@ -36,7 +39,7 @@ func MaxInt(x, y int) int {
 }
 
 func (db *Db) CreateEdit(id int, eg *EditGroup, required, classification int) error {
-	insert, err := db.db.Query("INSERT INTO edit (id, edit_group_id, required, classification) VALUES (?, ?, ?, ?)", id, eg.Id, required, classification)
+	insert, err := db.db.Query("INSERT INTO edit (id, required, classification) VALUES (?, ?, ?); INSERT INTO edit_edit_group (edit_id, edit_group_id) VALUES (?, ?)", id, required, classification, id, eg.Id)
 	if err != nil {
 		return err
 	}
@@ -70,7 +73,18 @@ func (db *Db) LookupEditById(id int) (*Edit, error) {
 }
 
 func (db *Db) LookupEditsByGroupId(id int) ([]*Edit, error) {
-	results, err := db.db.Query("SELECT id, required, classification FROM edit WHERE edit_group_id = ?", id)
+	results, err := db.db.Query("SELECT edit.id, edit.required, edit.classification, "+
+		"COUNT(user_classification_vandalism.classification) AS user_classifications_vandalism, "+
+		"COUNT(user_classification_constructive.classification) AS user_classifications_constructive, "+
+		"COUNT(user_classification_skipped.classification) AS user_classifications_skipped "+
+		"FROM edit "+
+		"INNER JOIN edit_edit_group ON (edit_edit_group.edit_id = edit.id) "+
+		"INNER JOIN edit_group ON (edit_group.id = edit_edit_group.edit_group_id) "+
+		"LEFT JOIN user_classification AS user_classification_vandalism ON (edit.id = user_classification_vandalism.edit_id AND user_classification_vandalism.classification = 0) "+
+		"LEFT JOIN user_classification AS user_classification_constructive ON (edit.id = user_classification_constructive.edit_id AND user_classification_constructive.classification = 1) "+
+		"LEFT JOIN user_classification AS user_classification_skipped ON (edit.id = user_classification_skipped.edit_id AND user_classification_skipped.classification = 2) "+
+		"WHERE edit_group.id = ? "+
+		"GROUP BY edit.id", id)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +92,7 @@ func (db *Db) LookupEditsByGroupId(id int) ([]*Edit, error) {
 	edits := []*Edit{}
 	for results.Next() {
 		edit := Edit{}
-		if err := results.Scan(&edit.Id, &edit.Required, &edit.Classification); err != nil {
+		if err := results.Scan(&edit.Id, &edit.Required, &edit.Classification, &edit.UserClassificationsVandalism, &edit.UserClassificationsConstructive, &edit.UserClassificationsSkipped); err != nil {
 			return nil, err
 		}
 		edits = append(edits, &edit)
@@ -114,23 +128,8 @@ func (db *Db) FetchAllEdits() ([]*Edit, error) {
 }
 
 func (db *Db) CalculateEditStatus(edit *Edit) (int, error) {
-	classifications, err := db.LookupUserClassificationsByEditId(edit.Id)
-	if err != nil {
-		return -1, err
-	}
-
-	constructive, vandalism, skipped := 0, 0, 0
-	for _, classification := range classifications {
-		if classification.Classification == EDIT_CLASSIFICATION_CONSTRUCTIVE {
-			constructive += 1
-		} else if classification.Classification == EDIT_CLASSIFICATION_VANDALISM {
-			vandalism += 1
-		} else if classification.Classification == EDIT_CLASSIFICATION_SKIPPED {
-			skipped += 1
-		}
-	}
-	sum := constructive + vandalism + skipped
-	max := MaxInt(constructive, MaxInt(vandalism, skipped))
+	sum := edit.UserClassificationsConstructive + edit.UserClassificationsVandalism + edit.UserClassificationsSkipped
+	max := MaxInt(edit.UserClassificationsConstructive, MaxInt(edit.UserClassificationsVandalism, edit.UserClassificationsSkipped))
 
 	if sum == 0 {
 		return EDIT_STATUS_NOT_DONE, nil
@@ -144,34 +143,19 @@ func (db *Db) CalculateEditStatus(edit *Edit) (int, error) {
 }
 
 func (db *Db) CalculateEditClassification(edit *Edit) (int, error) {
-	classifications, err := db.LookupUserClassificationsByEditId(edit.Id)
-	if err != nil {
-		return -1, err
-	}
+	sum := edit.UserClassificationsConstructive + edit.UserClassificationsVandalism + edit.UserClassificationsSkipped
+	max := MaxInt(edit.UserClassificationsConstructive, MaxInt(edit.UserClassificationsVandalism, edit.UserClassificationsSkipped))
 
-	constructive, vandalism, skipped := 0, 0, 0
-	for _, classification := range classifications {
-		if classification.Classification == EDIT_CLASSIFICATION_CONSTRUCTIVE {
-			constructive += 1
-		} else if classification.Classification == EDIT_CLASSIFICATION_VANDALISM {
-			vandalism += 1
-		} else if classification.Classification == EDIT_CLASSIFICATION_SKIPPED {
-			skipped += 1
-		}
-	}
-
-	sum := constructive + vandalism + skipped
-	max := MaxInt(constructive, MaxInt(vandalism, skipped))
 	if max < edit.Required {
 		return EDIT_CLASSIFICATION_UNKNOWN, nil
 	}
-	if 2*skipped > sum {
+	if 2*edit.UserClassificationsSkipped > sum {
 		return EDIT_CLASSIFICATION_SKIPPED, nil
 	}
-	if constructive >= 3*vandalism {
+	if edit.UserClassificationsConstructive >= 3*edit.UserClassificationsVandalism {
 		return EDIT_CLASSIFICATION_CONSTRUCTIVE, nil
 	}
-	if vandalism >= 3*constructive {
+	if edit.UserClassificationsVandalism >= 3*edit.UserClassificationsConstructive {
 		return EDIT_CLASSIFICATION_VANDALISM, nil
 	}
 	return EDIT_CLASSIFICATION_UNKNOWN, nil
