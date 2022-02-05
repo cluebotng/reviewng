@@ -142,8 +142,8 @@ func (app *App) RunForever(addr string) {
 	app.initializeRoutes()
 	server := &http.Server{
 		Addr:         addr,
-		WriteTimeout: time.Second * 15,
-		ReadTimeout:  time.Second * 15,
+		WriteTimeout: time.Second * 120,
+		ReadTimeout:  time.Second * 10,
 		IdleTimeout:  time.Second * 60,
 		Handler:      app.router,
 	}
