@@ -36,7 +36,7 @@ func MaxInt(x, y int) int {
 }
 
 func (db *Db) CreateEdit(id int, eg *EditGroup, required, classification int) error {
-	insert, err := db.db.Query("INSERT INTO edit (id, edit_group_id, required, classification) VALUES (?, ?, ?, ?)", id, eg.Id, required, classification)
+	insert, err := db.db.Query("INSERT INTO edit (id, required, classification) VALUES (?, ?, ?); INSERT INTO edit_edit_group (edit_id, edit_group_id) VALUES (?, ?)", id, required, classification, id, eg.Id)
 	if err != nil {
 		return err
 	}
@@ -70,7 +70,9 @@ func (db *Db) LookupEditById(id int) (*Edit, error) {
 }
 
 func (db *Db) LookupEditsByGroupId(id int) ([]*Edit, error) {
-	results, err := db.db.Query("SELECT id, required, classification FROM edit WHERE edit_group_id = ?", id)
+	results, err := db.db.Query("SELECT edit.id, edit.required, edit.classification FROM edit "+
+		"INNER JOIN edit_edit_group ON (edit_edit_group.edit_id = edit.id) "+
+		"WHERE edit_group.id = ?", id)
 	if err != nil {
 		return nil, err
 	}
