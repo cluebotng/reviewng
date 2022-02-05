@@ -106,30 +106,19 @@ func calculateDataDump(app *App, done bool) Data {
 				panic(err)
 			}
 
-			constructive, skipped, vandalism := 0, 0, 0
 			allComments, allUsers := []string{}, []string{}
-			userEditClassification, err := app.dbh.LookupUserClassificationsByEditId(e.Id)
-			if err != nil {
-				panic(err)
-			}
-			for _, uec := range userEditClassification {
-				if uec.Comment != "" {
-					allComments = append(allComments, uec.Comment)
+			if !done {
+				userEditClassification, err := app.dbh.LookupUserClassificationsByEditId(e.Id)
+				if err != nil {
+					panic(err)
 				}
-				if val, ok := userNameById[uec.UserId]; ok {
-					allUsers = append(allUsers, val)
-				}
-				if uec.Classification == db.EDIT_CLASSIFICATION_CONSTRUCTIVE {
-					constructive += 1
-					continue
-				}
-				if uec.Classification == db.EDIT_CLASSIFICATION_SKIPPED {
-					skipped += 1
-					continue
-				}
-				if uec.Classification == db.EDIT_CLASSIFICATION_VANDALISM {
-					vandalism += 1
-					continue
+				for _, uec := range userEditClassification {
+					if uec.Comment != "" {
+						allComments = append(allComments, uec.Comment)
+					}
+					if val, ok := userNameById[uec.UserId]; ok {
+						allUsers = append(allUsers, val)
+					}
 				}
 			}
 
@@ -138,16 +127,16 @@ func calculateDataDump(app *App, done bool) Data {
 				Id:                     e.Id,
 				Weight:                 editGroup.Weight,
 				Required:               e.Required,
-				Constructive:           constructive,
-				Skipped:                skipped,
-				Vandalism:              vandalism,
+				Constructive:           e.UserClassificationsConstructive,
+				Skipped:                e.UserClassificationsSkipped,
+				Vandalism:              e.UserClassificationsVandalism,
 				OriginalClassification: ConvertClassificationToString(e.Classification),
 				RealClassification:     ConvertClassificationToString(editClassification),
 				Comments:               allComments,
 				Users:                  allUsers,
 			}
 			allEdits = append(allEdits, edit)
-			if constructive+skipped+vandalism > 0 {
+			if e.UserClassificationsConstructive + e.UserClassificationsSkipped + e.UserClassificationsVandalism > 0 {
 				reviewedEdits = append(reviewedEdits, edit)
 			}
 			if editClassification != db.EDIT_CLASSIFICATION_UNKNOWN {
