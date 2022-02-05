@@ -50,8 +50,8 @@ def _update_crontab():
 
     c.sudo(f'''crontab - <<'EOL'
 # Backups
-45 */2 * * * /usr/bin/jsub -N cron-mysql-backup -once -quiet mysqldump --defaults-file=replica.my.cnf -h tools-db -r mysql_backups/$(date +"%d-%m-%Y_%H-%M-%S")-review.sql s54862__review
-30 5 * * * /usr/bin/jsub -N cron-mysql-prune -once -quiet find mysql_backups -mtime +7 -delete
+45 */2 * * * /usr/bin/jsub -N cron-mysql-backup -once -quiet mysqldump --defaults-file={TOOL_DIR / "replica.my.cnf"} -h tools-db -r {mysql_dir}/$(date +"%d-%m-%Y_%H-%M-%S")-review.sql s54862__review
+30 5 * * * /usr/bin/jsub -N cron-mysql-prune -once -quiet find {mysql_dir} -mtime +7 -delete
 
 # Scheduled endpoints
 13 9 * * * /usr/bin/jsub -N cron-update-stats -once -quiet curl -s https://cluebotng-review.toolforge.org/api/cron/stats
