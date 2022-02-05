@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"log"
 )
 
 // MIT License
@@ -50,12 +51,16 @@ func (db *Db) CreateEdit(id int, eg *EditGroup, required, classification int) er
 	}
 
 	if _, err := tx.ExecContext(ctx, "INSERT INTO edit (id, required, classification) VALUES (?, ?, ?)", id, required, classification); err != nil {
-		tx.Rollback()
+		if err := tx.Rollback(); err != nil {
+			log.Fatal(err)
+		}
 		return err
 	}
 
 	if _, err := tx.ExecContext(ctx, "INSERT INTO edit_edit_group (edit_id, edit_group_id) VALUES (?, ?)", id, eg.Id); err != nil {
-		tx.Rollback()
+		if err := tx.Rollback(); err != nil {
+			log.Fatal(err)
+		}
 		return err
 	}
 
