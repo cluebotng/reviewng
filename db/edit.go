@@ -1,5 +1,9 @@
 package db
 
+import (
+	"context"
+)
+
 // MIT License
 //
 // Copyright (c) 2021 Damian Zaremba
@@ -39,12 +43,23 @@ func MaxInt(x, y int) int {
 }
 
 func (db *Db) CreateEdit(id int, eg *EditGroup, required, classification int) error {
-	insert, err := db.db.Query("INSERT INTO edit (id, required, classification) VALUES (?, ?, ?); INSERT INTO edit_edit_group (edit_id, edit_group_id) VALUES (?, ?)", id, required, classification, id, eg.Id)
+	ctx := context.Background()
+	tx, err := db.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 
-	if err := insert.Close(); err != nil {
+	if _, err := tx.ExecContext(ctx, "INSERT INTO edit (id, required, classification) VALUES (?, ?, ?)", id, required, classification); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if _, err := tx.ExecContext(ctx, "INSERT INTO edit_edit_group (edit_id, edit_group_id) VALUES (?, ?)", id, eg.Id); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
 		return err
 	}
 	return nil
