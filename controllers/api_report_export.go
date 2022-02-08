@@ -35,11 +35,7 @@ func (app *App) ApiReportExportHandler(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	for _, edit := range allEdits {
-		editClassification, err := app.dbh.CalculateEditClassification(edit)
-		if err != nil {
-			panic(err)
-		}
-		editClassifications[edit.Id] = editClassification
+		editClassifications[edit.Id] = edit.ReviewedClassification()
 	}
 
 	response, err := json.Marshal(editClassifications)
