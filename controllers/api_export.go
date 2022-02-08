@@ -64,6 +64,8 @@ type Data struct {
 	Users      []User      `xml:"Users>User,omitempty"`
 }
 
+type TrainedData map[int]map[int]bool
+
 func calculateDataDump(app *App, done bool) Data {
 	cacheKey := "api-data-dump"
 	if done {
@@ -171,6 +173,36 @@ func calculateDataDump(app *App, done bool) Data {
 	return data
 }
 
+func calculateTrainingDump(app *App) TrainedData {
+	if cachedData := app.cacheStore.Get("api-training-dump"); cachedData != nil {
+		return cachedData.(TrainedData)
+	}
+
+	// Fetch edit group data
+	allEditGroups, err := app.dbh.FetchAllEditGroups()
+	if err != nil {
+		panic(err)
+	}
+
+	data := TrainedData{}
+	for _, editGroup := range allEditGroups {
+		editGroupEdits, err := app.dbh.LookupEditsByGroupId(editGroup.Id)
+		if err != nil {
+			panic(err)
+		}
+
+		data[editGroup.Id] = map[int]bool{}
+		for _, e := range editGroupEdits {
+			if e.ReviewedClassification() != db.EDIT_CLASSIFICATION_UNKNOWN {
+				data[editGroup.Id][e.Id] = e.ReviewedClassification() == db.EDIT_CLASSIFICATION_VANDALISM
+			}
+		}
+	}
+
+	app.cacheStore.Set("api-training-dump", data, time.Hour)
+	return data
+}
+
 func (app *App) ApiExportDumpHandler(w http.ResponseWriter, r *http.Request) {
 	if _, err := w.Write([]byte(xml.Header)); err != nil {
 		panic(err)
@@ -209,6 +241,13 @@ func (app *App) ApiExportDoneJsonHandler(w http.ResponseWriter, r *http.Request)
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	data := calculateDataDump(app, true)
 	if err := json.NewEncoder(w).Encode(&data); err != nil {
+		panic(err)
+	}
+}
+
+func (app *App) ApiExportTrainerJsonHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	if err := json.NewEncoder(w).Encode(calculateTrainingDump(app)); err != nil {
 		panic(err)
 	}
 }
