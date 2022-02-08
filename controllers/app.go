@@ -24,6 +24,7 @@ package controllers
 
 import (
 	"embed"
+	"github.com/cluebotng/reviewng/cache"
 	"github.com/cluebotng/reviewng/cfg"
 	"github.com/cluebotng/reviewng/db"
 	"github.com/dghubble/oauth1"
@@ -55,6 +56,7 @@ type App struct {
 	config       *cfg.Config
 	router       *mux.Router
 	sessionStore *sessions.CookieStore
+	cacheStore   *cache.InMemoryStorage
 	dbh          *db.Db
 	oauth        *oauth1.Config
 	fsTemplates  *embed.FS
@@ -79,9 +81,11 @@ func NewApp(cfg *cfg.Config, fsTemplates, fsStatic *embed.FS) *App {
 	}
 
 	session := sessions.NewCookieStore([]byte(cfg.Session.SecretKey))
+	memoryCache := cache.NewInMemoryStorage()
 	app := App{
 		config:       cfg,
 		sessionStore: session,
+		cacheStore:   memoryCache,
 		dbh:          dbh,
 		oauth:        &oauth,
 		fsTemplates:  fsTemplates,
@@ -142,8 +146,8 @@ func (app *App) RunForever(addr string) {
 	app.initializeRoutes()
 	server := &http.Server{
 		Addr:         addr,
-		WriteTimeout: time.Second * 15,
-		ReadTimeout:  time.Second * 15,
+		WriteTimeout: time.Second * 120,
+		ReadTimeout:  time.Second * 10,
 		IdleTimeout:  time.Second * 60,
 		Handler:      app.router,
 	}

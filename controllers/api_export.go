@@ -27,6 +27,7 @@ import (
 	"encoding/xml"
 	"github.com/cluebotng/reviewng/db"
 	"net/http"
+	"time"
 )
 
 type User struct {
@@ -64,6 +65,15 @@ type Data struct {
 }
 
 func calculateDataDump(app *App, done bool) Data {
+	cacheKey := "api-data-dump"
+	if done {
+		cacheKey += "-done"
+	}
+
+	if cachedData := app.cacheStore.Get(cacheKey); cachedData != nil {
+		return cachedData.(Data)
+	}
+
 	// Fetch user data
 	userData := []User{}
 	allUsers, err := app.dbh.FetchAllUsers()
@@ -136,7 +146,7 @@ func calculateDataDump(app *App, done bool) Data {
 				Users:                  allUsers,
 			}
 			allEdits = append(allEdits, edit)
-			if e.UserClassificationsConstructive + e.UserClassificationsSkipped + e.UserClassificationsVandalism > 0 {
+			if e.UserClassificationsConstructive+e.UserClassificationsSkipped+e.UserClassificationsVandalism > 0 {
 				reviewedEdits = append(reviewedEdits, edit)
 			}
 			if editClassification != db.EDIT_CLASSIFICATION_UNKNOWN {
@@ -161,6 +171,8 @@ func calculateDataDump(app *App, done bool) Data {
 	if !done {
 		data.Users = userData
 	}
+
+	app.cacheStore.Set(cacheKey, data, time.Hour)
 	return data
 }
 
