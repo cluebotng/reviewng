@@ -36,6 +36,25 @@ type Edit struct {
 	UserClassificationsSkipped      int
 }
 
+func (edit *Edit) ReviewedClassification() int {
+	sum := edit.UserClassificationsConstructive + edit.UserClassificationsVandalism + edit.UserClassificationsSkipped
+	max := MaxInt(edit.UserClassificationsConstructive, MaxInt(edit.UserClassificationsVandalism, edit.UserClassificationsSkipped))
+
+	if max < edit.Required {
+		return EDIT_CLASSIFICATION_UNKNOWN
+	}
+	if 2*edit.UserClassificationsSkipped > sum {
+		return EDIT_CLASSIFICATION_SKIPPED
+	}
+	if edit.UserClassificationsConstructive >= 3*edit.UserClassificationsVandalism {
+		return EDIT_CLASSIFICATION_CONSTRUCTIVE
+	}
+	if edit.UserClassificationsVandalism >= 3*edit.UserClassificationsConstructive {
+		return EDIT_CLASSIFICATION_VANDALISM
+	}
+	return EDIT_CLASSIFICATION_UNKNOWN
+}
+
 func MaxInt(x, y int) int {
 	if x < y {
 		return y
@@ -160,23 +179,4 @@ func (db *Db) CalculateEditStatus(edit *Edit) (int, error) {
 	}
 
 	return EDIT_STATUS_PARTIAL, nil
-}
-
-func (db *Db) CalculateEditClassification(edit *Edit) (int, error) {
-	sum := edit.UserClassificationsConstructive + edit.UserClassificationsVandalism + edit.UserClassificationsSkipped
-	max := MaxInt(edit.UserClassificationsConstructive, MaxInt(edit.UserClassificationsVandalism, edit.UserClassificationsSkipped))
-
-	if max < edit.Required {
-		return EDIT_CLASSIFICATION_UNKNOWN, nil
-	}
-	if 2*edit.UserClassificationsSkipped > sum {
-		return EDIT_CLASSIFICATION_SKIPPED, nil
-	}
-	if edit.UserClassificationsConstructive >= 3*edit.UserClassificationsVandalism {
-		return EDIT_CLASSIFICATION_CONSTRUCTIVE, nil
-	}
-	if edit.UserClassificationsVandalism >= 3*edit.UserClassificationsConstructive {
-		return EDIT_CLASSIFICATION_VANDALISM, nil
-	}
-	return EDIT_CLASSIFICATION_UNKNOWN, nil
 }

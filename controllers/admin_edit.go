@@ -60,12 +60,6 @@ func (app *App) AdminEditDetailsHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// Calculate the current status from reviews
-	editStatus, err := app.dbh.CalculateEditClassification(edit)
-	if err != nil {
-		panic(err)
-	}
-
 	// Lookup all users
 	allUsers, err := app.dbh.FetchAllUsers()
 	if err != nil {
@@ -110,7 +104,7 @@ func (app *App) AdminEditDetailsHandler(w http.ResponseWriter, r *http.Request) 
 		UserClassifications   []userEditClassification
 	}{
 		Edit:                  edit,
-		CurrentClassification: editStatus,
+		CurrentClassification: edit.ReviewedClassification(),
 		UserClassifications:   editUserClassifications,
 	}); err != nil {
 		panic(err)

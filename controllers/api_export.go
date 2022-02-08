@@ -111,11 +111,6 @@ func calculateDataDump(app *App, done bool) Data {
 
 		allEdits, reviewedEdits, doneEdits := []Edit{}, []Edit{}, []Edit{}
 		for _, e := range editGroupEdits {
-			editClassification, err := app.dbh.CalculateEditClassification(e)
-			if err != nil {
-				panic(err)
-			}
-
 			allComments, allUsers := []string{}, []string{}
 			if !done {
 				userEditClassification, err := app.dbh.LookupUserClassificationsByEditId(e.Id)
@@ -141,7 +136,7 @@ func calculateDataDump(app *App, done bool) Data {
 				Skipped:                e.UserClassificationsSkipped,
 				Vandalism:              e.UserClassificationsVandalism,
 				OriginalClassification: ConvertClassificationToString(e.Classification),
-				RealClassification:     ConvertClassificationToString(editClassification),
+				RealClassification:     ConvertClassificationToString(e.ReviewedClassification()),
 				Comments:               allComments,
 				Users:                  allUsers,
 			}
@@ -149,7 +144,7 @@ func calculateDataDump(app *App, done bool) Data {
 			if e.UserClassificationsConstructive+e.UserClassificationsSkipped+e.UserClassificationsVandalism > 0 {
 				reviewedEdits = append(reviewedEdits, edit)
 			}
-			if editClassification != db.EDIT_CLASSIFICATION_UNKNOWN {
+			if e.ReviewedClassification() != db.EDIT_CLASSIFICATION_UNKNOWN {
 				doneEdits = append(doneEdits, edit)
 			}
 		}

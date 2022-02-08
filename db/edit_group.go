@@ -131,14 +131,8 @@ func (db *Db) CalculateRandomPendingEditForUser(user *User) (*Edit, error) {
 				continue
 			}
 
-			// Next check if the edit is pending a classification
-			editClassification, err := db.CalculateEditClassification(edit)
-			if err != nil {
-				return nil, err
-			}
-
 			// Return the edit if it still needs classifying
-			if editClassification == EDIT_CLASSIFICATION_UNKNOWN {
+			if edit.ReviewedClassification() == EDIT_CLASSIFICATION_UNKNOWN {
 				return edit, nil
 			}
 		}

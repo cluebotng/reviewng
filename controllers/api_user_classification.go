@@ -102,14 +102,9 @@ func (app *App) ApiUserClassificationCreateHandler(w http.ResponseWriter, r *htt
 		return
 	}
 
-	editClassification, err := app.dbh.CalculateEditClassification(edit)
-	if err != nil {
-		panic(err)
-	}
-
 	// Ask the user to confirm if the classification is statistically different
 	requiresConfirmation := false
-	if editClassification != db.EDIT_CLASSIFICATION_UNKNOWN && editClassification != userClassification.Classification {
+	if edit.ReviewedClassification() != db.EDIT_CLASSIFICATION_UNKNOWN && edit.ReviewedClassification() != userClassification.Classification {
 		if !userClassification.Confirmation {
 			requiresConfirmation = true
 		}

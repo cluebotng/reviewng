@@ -160,14 +160,9 @@ func (db *Db) CalculateUserClassificationAccuracy(user *User) (*UserAccuracy, er
 			return nil, err
 		}
 
-		classification, err := db.CalculateEditClassification(edit)
-		if err != nil {
-			return nil, err
-		}
-
-		if classification != EDIT_CLASSIFICATION_UNKNOWN && classification != EDIT_CLASSIFICATION_SKIPPED {
+		if edit.ReviewedClassification() != EDIT_CLASSIFICATION_UNKNOWN && edit.ReviewedClassification() != EDIT_CLASSIFICATION_SKIPPED {
 			total += 1
-			if classification == userClassification.Classification {
+			if edit.ReviewedClassification() == userClassification.Classification {
 				correct += 1
 			}
 		}
