@@ -90,7 +90,15 @@ func (db *Db) CreateEdit(id int, eg *EditGroup, required, classification int) er
 }
 
 func (db *Db) LookupEditById(id int) (*Edit, error) {
-	results, err := db.db.Query("SELECT id, required, classification FROM edit WHERE id = ?", id)
+	results, err := db.db.Query("SELECT id, required, classification "+
+		"COUNT(DISTINCT user_classification_vandalism.id) AS user_classifications_vandalism, "+
+		"COUNT(DISTINCT user_classification_constructive.id) AS user_classifications_constructive, "+
+		"COUNT(DISTINCT user_classification_skipped.id) AS user_classifications_skipped "+
+		"FROM edit "+
+		"LEFT JOIN user_classification AS user_classification_vandalism ON (user_classification_vandalism.edit_id = edit.id AND user_classification_vandalism.classification = 0) "+
+		"LEFT JOIN user_classification AS user_classification_constructive ON (user_classification_constructive.edit_id = edit.id AND user_classification_constructive.classification = 1) "+
+		"LEFT JOIN user_classification AS user_classification_skipped ON (user_classification_skipped.edit_id = edit.id AND user_classification_skipped.classification = 2) "+
+		"WHERE edit.id = ? GROUP BY edit.id, edit.required, edit.classification", id)
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +108,7 @@ func (db *Db) LookupEditById(id int) (*Edit, error) {
 	}
 
 	edit := &Edit{}
-	if err := results.Scan(&edit.Id, &edit.Required, &edit.Classification); err != nil {
+	if err := results.Scan(&edit.Id, &edit.Required, &edit.Classification, &edit.UserClassificationsVandalism, &edit.UserClassificationsConstructive, &edit.UserClassificationsSkipped); err != nil {
 		return nil, err
 	}
 
@@ -113,17 +121,17 @@ func (db *Db) LookupEditById(id int) (*Edit, error) {
 
 func (db *Db) LookupEditsByGroupId(id int) ([]*Edit, error) {
 	results, err := db.db.Query("SELECT edit.id, edit.required, edit.classification, "+
-		"COUNT(user_classification_vandalism.classification) AS user_classifications_vandalism, "+
-		"COUNT(user_classification_constructive.classification) AS user_classifications_constructive, "+
-		"COUNT(user_classification_skipped.classification) AS user_classifications_skipped "+
+		"COUNT(DISTINCT user_classification_vandalism.id) AS user_classifications_vandalism, "+
+		"COUNT(DISTINCT user_classification_constructive.id) AS user_classifications_constructive, "+
+		"COUNT(DISTINCT user_classification_skipped.id) AS user_classifications_skipped "+
 		"FROM edit "+
 		"INNER JOIN edit_edit_group ON (edit_edit_group.edit_id = edit.id) "+
 		"INNER JOIN edit_group ON (edit_group.id = edit_edit_group.edit_group_id) "+
-		"LEFT JOIN user_classification AS user_classification_vandalism ON (edit.id = user_classification_vandalism.edit_id AND user_classification_vandalism.classification = 0) "+
-		"LEFT JOIN user_classification AS user_classification_constructive ON (edit.id = user_classification_constructive.edit_id AND user_classification_constructive.classification = 1) "+
-		"LEFT JOIN user_classification AS user_classification_skipped ON (edit.id = user_classification_skipped.edit_id AND user_classification_skipped.classification = 2) "+
+		"LEFT JOIN user_classification AS user_classification_vandalism ON (user_classification_vandalism.edit_id = edit.id AND user_classification_vandalism.classification = 0) "+
+		"LEFT JOIN user_classification AS user_classification_constructive ON (user_classification_constructive.edit_id = edit.id AND user_classification_constructive.classification = 1) "+
+		"LEFT JOIN user_classification AS user_classification_skipped ON (user_classification_skipped.edit_id = edit.id AND user_classification_skipped.classification = 2) "+
 		"WHERE edit_group.id = ? "+
-		"GROUP BY edit.id", id)
+		"GROUP BY edit.id, edit.required, edit.classification", id)
 	if err != nil {
 		return nil, err
 	}
@@ -145,7 +153,17 @@ func (db *Db) LookupEditsByGroupId(id int) ([]*Edit, error) {
 }
 
 func (db *Db) FetchAllEdits() ([]*Edit, error) {
-	results, err := db.db.Query("SELECT id, required, classification FROM edit")
+	results, err := db.db.Query("SELECT edit.id, edit.required, edit.classification, " +
+		"COUNT(DISTINCT user_classification_vandalism.id) AS user_classifications_vandalism, " +
+		"COUNT(DISTINCT user_classification_constructive.id) AS user_classifications_constructive, " +
+		"COUNT(DISTINCT user_classification_skipped.id) AS user_classifications_skipped " +
+		"FROM edit " +
+		"INNER JOIN edit_edit_group ON (edit_edit_group.edit_id = edit.id) " +
+		"INNER JOIN edit_group ON (edit_group.id = edit_edit_group.edit_group_id) " +
+		"LEFT JOIN user_classification AS user_classification_vandalism ON (user_classification_vandalism.edit_id = edit.id AND user_classification_vandalism.classification = 0) " +
+		"LEFT JOIN user_classification AS user_classification_constructive ON (user_classification_constructive.edit_id = edit.id AND user_classification_constructive.classification = 1) " +
+		"LEFT JOIN user_classification AS user_classification_skipped ON (user_classification_skipped.edit_id = edit.id AND user_classification_skipped.classification = 2) " +
+		"GROUP BY edit.id, edit.required, edit.classification")
 	if err != nil {
 		return nil, err
 	}
@@ -153,7 +171,7 @@ func (db *Db) FetchAllEdits() ([]*Edit, error) {
 	edits := []*Edit{}
 	for results.Next() {
 		edit := &Edit{}
-		if err := results.Scan(&edit.Id, &edit.Required, &edit.Classification); err != nil {
+		if err := results.Scan(&edit.Id, &edit.Required, &edit.Classification, &edit.UserClassificationsVandalism, &edit.UserClassificationsConstructive, &edit.UserClassificationsSkipped); err != nil {
 			return nil, err
 		}
 		edits = append(edits, edit)
