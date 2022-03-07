@@ -126,6 +126,9 @@ func (app *App) initializeRoutes() {
 	app.router.HandleFunc("/api/report/import", app.ApiReportImportHandler).Methods("GET")
 	app.router.HandleFunc("/api/report/export", app.ApiReportExportHandler).Methods("GET")
 
+	app.router.HandleFunc("/api/training/import", app.ApiTrainingImportHandler).Methods("GET")
+	app.router.HandleFunc("/api/training/data/{id}", app.ApiTrainingDataHandler).Methods("GET")
+
 	app.router.HandleFunc("/api/export/done", app.ApiExportDoneHandler).Methods("GET")
 	app.router.HandleFunc("/api/export/done.json", app.ApiExportDoneJsonHandler).Methods("GET")
 	app.router.HandleFunc("/api/export/dump", app.ApiExportDumpHandler).Methods("GET")

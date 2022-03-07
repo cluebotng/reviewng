@@ -62,3 +62,13 @@ CREATE TABLE `edit_edit_group`
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_bin;
+
+DROP TABLE IF EXISTS `edit_training_data`;
+CREATE TABLE `edit_training_data`
+(
+    `edit_id`             int NOT NULL,
+    `training_data`       longblob NOT NULL,
+    PRIMARY KEY (`edit_id`)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_bin;
