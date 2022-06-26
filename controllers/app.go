@@ -32,6 +32,7 @@ import (
 	"github.com/gorilla/sessions"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 )
 
@@ -61,6 +62,7 @@ type App struct {
 	oauth        *oauth1.Config
 	fsTemplates  *embed.FS
 	fsStatic     *embed.FS
+	trainingSync sync.Mutex
 }
 
 func NewApp(cfg *cfg.Config, fsTemplates, fsStatic *embed.FS) *App {

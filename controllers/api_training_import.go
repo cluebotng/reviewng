@@ -59,6 +59,9 @@ func downloadTrainingDataForEdit(editId int, editIsVandalism bool) (*db.Training
 }
 
 func (app *App) ApiTrainingImportHandler(w http.ResponseWriter, r *http.Request) {
+	app.trainingSync.Lock()
+	defer app.trainingSync.Unlock()
+
 	// Find all edits that we should have data for
 	allEditGroups, err := app.dbh.FetchAllEditGroups()
 	if err != nil {

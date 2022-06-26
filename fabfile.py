@@ -57,6 +57,7 @@ def _update_crontab():
 13 9 * * * /usr/bin/jsub -N cron-update-stats -once -quiet curl -s https://cluebotng-review.toolforge.org/api/cron/stats
 13 * * * * /usr/bin/jsub -N cron-report-import -once -quiet curl -s https://cluebotng-review.toolforge.org/api/report/import
 48 * * * * /usr/bin/jsub -N cron-review-import -once -quiet curl -s https://cluebotng.toolforge.org/api/?action=review.import
+30 * * * * /usr/bin/jsub -N cron-training-import -once -quiet curl -s https://cluebotng-review.toolforge.org/api/training/import
 EOL
     ''')
 
