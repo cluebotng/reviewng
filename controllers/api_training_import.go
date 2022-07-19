@@ -27,6 +27,7 @@ import (
 	"fmt"
 	"github.com/cluebotng/reviewng/db"
 	"io/ioutil"
+	"log"
 	"net/http"
 )
 
@@ -103,9 +104,13 @@ func (app *App) ApiTrainingImportHandler(w http.ResponseWriter, r *http.Request)
 
 	// Cache training data for all missing edits
 	for editId, isVandalism := range editsMissingTrainingData {
-		if trainingData, err := downloadTrainingDataForEdit(editId, isVandalism); err == nil {
+		if trainingData, err := downloadTrainingDataForEdit(editId, isVandalism); err != nil {
+			log.Printf("Failed to download training data: %v+: %+v", editId, err)
+		} else {
 			if err := app.dbh.StoreTrainingDataForEdit(editId, trainingData); err != nil {
-				panic(err)
+				log.Printf("Failed to store training data: %v+: %+v", editId, err)
+			} else {
+				log.Printf("Saved training data: %v+ (%+v)", editId, isVandalism)
 			}
 		}
 	}
