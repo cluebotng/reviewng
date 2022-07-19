@@ -29,10 +29,17 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
+	"strings"
 )
 
 func getLoginToken(httpClient *http.Client) (string, error) {
-	resp, err := httpClient.Get("https://en.wikipedia.org/w/api.php?action=query&meta=tokens&type=login&format=json")
+	req, err := http.NewRequest("GET", "https://en.wikipedia.org/w/api.php?action=query&meta=tokens&type=login&format=json", nil)
+	if err != nil {
+		return "", nil
+	}
+	req.Header.Set("User-Agent", "ClueBot NG Review NG/1.0")
+
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return "", nil
 	}
@@ -58,7 +65,13 @@ func getLoginToken(httpClient *http.Client) (string, error) {
 }
 
 func getCsrfToken(httpClient *http.Client) (string, error) {
-	resp, err := httpClient.Get("https://en.wikipedia.org/w/api.php?action=query&meta=tokens&format=json")
+	req, err := http.NewRequest("GET", "https://en.wikipedia.org/w/api.php?action=query&meta=tokens&format=json", nil)
+	if err != nil {
+		return "", nil
+	}
+	req.Header.Set("User-Agent", "ClueBot NG Review NG/1.0")
+
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return "", nil
 	}
@@ -90,13 +103,20 @@ func login(httpClient *http.Client, username, password, token string) error {
 	form.Add("lgpassword", password)
 	form.Add("lgtoken", token)
 	form.Add("format", "json")
-	resp, err := httpClient.PostForm("https://en.wikipedia.org/w/api.php", form)
+
+	req, err := http.NewRequest("POST", "https://en.wikipedia.org/w/api.php", strings.NewReader(form.Encode()))
 	if err != nil {
-		return nil
+		return err
+	}
+	req.Header.Set("User-Agent", "ClueBot NG Review NG/1.0")
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return err
 	}
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil
+		return err
 	}
 	if err := resp.Body.Close(); err != nil {
 		return err
@@ -155,7 +175,13 @@ func updatePage(httpClient *http.Client, contents string) error {
 	form.Add("format", "json")
 	form.Add("text", contents)
 
-	resp, err := httpClient.PostForm("https://en.wikipedia.org/w/api.php", form)
+	req, err := http.NewRequest("POST", "https://en.wikipedia.org/w/api.php", strings.NewReader(form.Encode()))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("User-Agent", "ClueBot NG Review NG/1.0")
+
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil
 	}

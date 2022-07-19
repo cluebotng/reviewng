@@ -31,7 +31,13 @@ import (
 )
 
 func downloadTrainingDataForEdit(editId int, editIsVandalism bool) (*db.TrainingData, error) {
-	resp, err := http.Get(fmt.Sprintf("https://cluebotng.toolforge.org/api/?action=training.data&include_text=1&rev_id=%d", editId))
+	req, err := http.NewRequest("GET", fmt.Sprintf("https://cluebotng.toolforge.org/api/?action=training.data&include_text=1&rev_id=%d", editId), nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("User-Agent", "ClueBot NG Review NG/1.0")
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}

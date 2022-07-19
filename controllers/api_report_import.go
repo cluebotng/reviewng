@@ -30,7 +30,13 @@ import (
 )
 
 func (app *App) ApiReportImportHandler(w http.ResponseWriter, r *http.Request) {
-	resp, err := http.Get("https://cluebotng.toolforge.org/api/?action=review.export")
+	req, err := http.NewRequest("GET", "https://cluebotng.toolforge.org/api/?action=review.export", nil)
+	if err != nil {
+		panic(err)
+	}
+	req.Header.Set("User-Agent", "ClueBot NG Review NG/1.0")
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		panic(err)
 	}

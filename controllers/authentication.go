@@ -118,7 +118,13 @@ func (app *App) LoginCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	// Using the access token fetch the identity
 	token := oauth1.NewToken(accessToken, accessSecret)
 	httpClient := app.oauth.Client(context.Background(), token)
-	resp, err := httpClient.Get("https://en.wikipedia.org/w/index.php?title=Special:OAuth/identify")
+	req, err := http.NewRequest("GET", "https://en.wikipedia.org/w/index.php?title=Special:OAuth/identify", nil)
+	if err != nil {
+		panic(err)
+	}
+	req.Header.Set("User-Agent", "ClueBot NG Review NG/1.0")
+
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		panic(err)
 	}
