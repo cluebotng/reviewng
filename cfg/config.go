@@ -34,7 +34,7 @@ type Config struct {
 		Release string
 	}
 	Session struct {
-		SecretKey string
+		SecretKey string `yaml:"key"`
 	}
 	Db struct {
 		Host string
