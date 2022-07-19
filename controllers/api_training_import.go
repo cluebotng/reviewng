@@ -32,7 +32,7 @@ import (
 )
 
 func downloadTrainingDataForEdit(editId int, editIsVandalism bool) (*db.TrainingData, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("https://cluebotng.toolforge.org/api/?action=training.data&include_text=1&rev_id=%d", editId), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("https://cluebotng-api.toolforge.org/?action=training.data&include_text=1&rev_id=%d", editId), nil)
 	if err != nil {
 		return nil, err
 	}
