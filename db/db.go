@@ -35,7 +35,7 @@ type Db struct {
 }
 
 func NewDb(cfg *cfg.Config) (*Db, error) {
-	url := fmt.Sprintf("%s:%s@tcp(%s)/%s", cfg.Db.User, cfg.Db.Pass, cfg.Db.Host, cfg.Db.Name)
+	url := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", cfg.Db.User, cfg.Db.Pass, cfg.Db.Host, cfg.Db.Port, cfg.Db.Name)
 
 	database, err := sql.Open("mysql", url)
 	if err != nil {
