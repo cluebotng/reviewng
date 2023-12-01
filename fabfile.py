@@ -1,9 +1,7 @@
-import time
-from pathlib import PosixPath
-
 import requests
+import time
 from fabric import Connection, Config, task
-from patchwork import files
+from pathlib import PosixPath
 
 
 def _get_latest_github_release(org, repo):
@@ -27,44 +25,83 @@ c = Connection(
 def _update():
     """Update the review release."""
     print(f'Moving reviewng to {REVIEW_RELEASE}')
-    release_dir = TOOL_DIR / "releases"
-    if not files.exists(c, release_dir):
-        c.sudo(f'mkdir -p {release_dir}')
+    c.sudo(f'mkdir -p {TOOL_DIR / "releases"}')
 
-    target_file = release_dir / REVIEW_RELEASE
-    existing_release = files.exists(c, f'{target_file.as_posix()}')
-    if not existing_release:
-        c.sudo(f'wget -O {target_file.as_posix()}'
-               ' https://github.com/cluebotng/reviewng/releases'
-               f'/download/{REVIEW_RELEASE}/reviewng')
-        c.sudo(f'chmod 550 {target_file.as_posix()}')
+    target_file = TOOL_DIR / "releases" / REVIEW_RELEASE
+    c.sudo(f'test -f {target_file.as_posix()} || wget -O {target_file.as_posix()}'
+           f' https://github.com/cluebotng/reviewng/releases/download/{REVIEW_RELEASE}/reviewng')
+    c.sudo(f'chmod 550 {target_file.as_posix()}')
 
     c.sudo(f'ln -sf {target_file.as_posix()} {TOOL_DIR / "reviewng"}')
-    return not existing_release
 
 
 def _update_crontab():
     mysql_dir = (TOOL_DIR / "mysql_backups")
-    if not files.exists(c, mysql_dir):
-        c.sudo(f'mkdir -p {mysql_dir}')
+    c.sudo(f'mkdir -p {mysql_dir}')
 
-    c.sudo(f'''crontab - <<'EOL'
+    print('Clear crontab entries')
+    c.sudo('crontab -r || true')
+
+    print('Update job entries')
+    c.sudo(f'''cat > {TOOL_DIR / "jobs.yaml"} <<'EOL'
+---
 # Backups
-45 */2 * * * /usr/bin/jsub -N cron-mysql-backup -once -quiet mysqldump --defaults-file={TOOL_DIR / "replica.my.cnf"} -h tools-db -r {mysql_dir}/$(date +"%d-%m-%Y_%H-%M-%S")-review.sql s54862__review
-30 5 * * * /usr/bin/jsub -N cron-mysql-prune -once -quiet find {mysql_dir} -mtime +7 -delete
+- name: backup-database
+  command: mysqldump --defaults-file={TOOL_DIR / "replica.my.cnf"} -h tools-db -r {mysql_dir}/$(date +"%d-%m-%Y_%H-%M-%S")-review.sql s54862__review
+  image: bullseye
+  filelog-stdout: logs/backup_database.stdout.log
+  filelog-stderr: logs/backup_database.stderr.log
+  schedule: '45 */2 * * *'
+  emails: none
+
+- name: prune-backups
+  command: find {mysql_dir} -mtime +7 -delete
+  image: bullseye
+  filelog-stdout: logs/prune_backups.stdout.log
+  filelog-stderr: logs/prune_backups.stderr.log
+  schedule: '30 5 * * *'
+  emails: none
 
 # Scheduled endpoints
-13 9 * * * /usr/bin/jsub -N cron-update-stats -once -quiet curl -s https://cluebotng-review.toolforge.org/api/cron/stats
-13 * * * * /usr/bin/jsub -N cron-report-import -once -quiet curl -s https://cluebotng-review.toolforge.org/api/report/import
-48 * * * * /usr/bin/jsub -N cron-review-import -once -quiet curl -s https://cluebotng.toolforge.org/api/?action=review.import
-30 * * * * /usr/bin/jsub -N cron-training-import -once -quiet curl -s https://cluebotng-review.toolforge.org/api/training/import
+- name: update-stats
+  command: curl -s https://cluebotng-review.toolforge.org/api/cron/stats
+  image: bullseye
+  filelog-stdout: logs/update_stats.stdout.log
+  filelog-stderr: logs/update_stats.stderr.log
+  schedule: '13 9 * * *'
+  emails: none
+
+- name: report-import
+  command: curl -s https://cluebotng-review.toolforge.org/api/report/import
+  image: bullseye
+  filelog-stdout: logs/report_import.stdout.log
+  filelog-stderr: logs/report_import.stderr.log
+  schedule: '13 * * * *'
+  emails: none
+
+- name: review-import
+  command: curl -s https://cluebotng.toolforge.org/api/?action=review.import
+  image: bullseye
+  filelog-stdout: logs/review_import.stdout.log
+  filelog-stderr: logs/review_import.stderr.log
+  schedule: '48 * * * *'
+  emails: none
+
+- name: training-import
+  command: curl -s https://cluebotng-review.toolforge.org/api/training/import
+  image: bullseye
+  filelog-stdout: logs/training_import.stdout.log
+  filelog-stderr: logs/training_import.stderr.log
+  schedule: '30 * * * *'
+  emails: none
 EOL
     ''')
+    c.sudo(f'XDG_CONFIG_HOME={TOOL_DIR} toolforge jobs load {TOOL_DIR / "jobs.yaml"}')
 
 
 def _restart():
-    c.sudo(f'webservice --backend=kubernetes golang111 stop {TOOL_DIR / "reviewng"}')
-    c.sudo(f'webservice --backend=kubernetes golang111 start {TOOL_DIR / "reviewng"}')
+    c.sudo(f'webservice --backend=kubernetes golang1.11 stop {TOOL_DIR / "reviewng"}')
+    c.sudo(f'webservice --backend=kubernetes golang1.11 start {TOOL_DIR / "reviewng"}')
 
 
 @task()
@@ -76,6 +113,6 @@ def restart(c):
 @task()
 def deploy(c):
     """Deploy the latest release & restart the webservice."""
-    if _update():
-        _restart()
+    _update()
+    _restart()
     _update_crontab()
